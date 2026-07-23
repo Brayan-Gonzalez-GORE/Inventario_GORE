@@ -53,6 +53,7 @@ body{
 
 /* ===== Top bar ===== */
 .topbar{
+  position:sticky; top:0; z-index:40;
   background:var(--ink);
   color:var(--paper);
   padding:22px 32px 20px;

@@ -761,7 +761,27 @@ function renderUbicaciones(){
     }
   });
   document.getElementById('tbody-ubicaciones').innerHTML = html;
+
+  const divSelect = document.getElementById('ubi-division');
+  if (divSelect && divSelect.options.length <= 1) {
+    divSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+      ORGANIGRAMA.map((g, idx) => `<option value="${idx}">${g.group}</option>`).join('');
+  }
 }
+
+document.getElementById('ubi-division').addEventListener('change', function(){
+  const deptoSelect = document.getElementById('ubi-depto');
+  const idx = this.value;
+  if (!idx) {
+    deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
+    deptoSelect.disabled = true;
+    return;
+  }
+  const group = ORGANIGRAMA[idx];
+  deptoSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+    group.options.map(o => `<option value="${o}">${o}</option>`).join('');
+  deptoSelect.disabled = false;
+});
 function eliminarUbicacion(i){
   const u = adminData.ubicaciones[i];
   if(workingData.some(r=>r.ubicacion===u.name)){
@@ -774,10 +794,23 @@ function eliminarUbicacion(i){
 }
 document.getElementById('form-ubicacion').addEventListener('submit', function(e){
   e.preventDefault();
-  const name = document.getElementById('ubi-name').value.trim();
+  const divIdx = document.getElementById('ubi-division').value;
+  const depto = document.getElementById('ubi-depto').value;
+  const detail = document.getElementById('ubi-name').value.trim();
+  
+  if (!divIdx || !depto || !detail) return;
+  const division = ORGANIGRAMA[divIdx].group;
+  
+  const name = `${division} - ${depto} - ${detail}`;
+  
   if(adminData.ubicaciones.some(u=>u.name===name)){ alert('Esa ubicación ya existe.'); return; }
   adminData.ubicaciones.push({name});
   this.reset();
+  
+  const deptoSelect = document.getElementById('ubi-depto');
+  deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
+  deptoSelect.disabled = true;
+  
   renderUbicaciones();
   initFilterOptions();
 });

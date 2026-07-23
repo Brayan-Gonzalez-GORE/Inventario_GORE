@@ -161,9 +161,24 @@
     <div id="view-ubicaciones" class="view">
       <section class="panel">
         <div class="panel-head"><h2 class="panel-title">Ubicaciones</h2></div>
-        <form class="admin-form" id="form-ubicacion">
-          <div class="field grow"><label>Nombre de la ubicación</label><input type="text" id="ubi-name" placeholder="Ej: Bodega Municipal" required></div>
-          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+        <form class="admin-form" id="form-ubicacion" style="align-items:flex-end;">
+          <div class="field" style="flex:1;">
+            <label>División / Repartición</label>
+            <select id="ubi-division" required>
+              <option value="">-- Seleccione --</option>
+            </select>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Departamento / Unidad</label>
+            <select id="ubi-depto" required disabled>
+              <option value="">-- Seleccione División primero --</option>
+            </select>
+          </div>
+          <div class="field grow">
+            <label>Detalle exacto de la ubicación</label>
+            <input type="text" id="ubi-name" placeholder="Ej: Oficina 301, Bodega..." required>
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit" style="margin-bottom:2px;">+ Agregar</button>
         </form>
         <div class="table-scroll">
           <table>
