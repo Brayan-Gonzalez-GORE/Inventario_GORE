@@ -474,14 +474,51 @@ function renderTable() {
 
 function updateBulkMoveButton() {
   const btn = document.getElementById('btn-bulk-move');
+  const btnPrint = document.getElementById('btn-print-qr');
   if (!btn) return;
   if (selectedIds.size > 0) {
     btn.style.display = 'inline-flex';
     btn.textContent = `Mover Seleccionados (${selectedIds.size})`;
+    if (btnPrint) {
+      btnPrint.style.display = 'inline-flex';
+      btnPrint.textContent = `Imprimir QRs (${selectedIds.size})`;
+    }
   } else {
     btn.style.display = 'none';
+    if (btnPrint) btnPrint.style.display = 'none';
   }
 }
+
+document.getElementById('btn-print-qr')?.addEventListener('click', () => {
+  const printArea = document.getElementById('print-area');
+  if (!printArea) return;
+  printArea.innerHTML = '';
+  
+  const selectedAssets = workingData.filter(a => selectedIds.has(a.id));
+  
+  selectedAssets.forEach(asset => {
+    const card = document.createElement('div');
+    card.className = 'qr-card';
+    
+    const qrDiv = document.createElement('div');
+    card.appendChild(qrDiv);
+    
+    const info = document.createElement('p');
+    const detalleCorto = asset.detalle.length > 30 ? asset.detalle.substring(0, 30) + '...' : asset.detalle;
+    info.innerHTML = `<strong>${asset.codigo || 'S/C'}</strong>${detalleCorto}<br>ID: ${asset.id}`;
+    card.appendChild(info);
+    
+    printArea.appendChild(card);
+    
+    new QRCode(qrDiv, {
+      text: asset.codigo || String(asset.id),
+      width: 100,
+      height: 100
+    });
+  });
+  
+  setTimeout(() => window.print(), 300);
+});
 
 function renderPagination() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -2258,3 +2295,60 @@ document.getElementById('btn-save-bulk-move')?.addEventListener('click', () => {
   closeBulkMoveModal();
   refreshAll();
 });
+
+/* ===== Escáner QR ===== */
+let html5QrcodeScanner = null;
+
+function initScanner() {
+  if (html5QrcodeScanner) return;
+  html5QrcodeScanner = new Html5QrcodeScanner(
+    "qr-reader",
+    { fps: 10, qrbox: {width: 250, height: 250} },
+    false
+  );
+  html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+
+function stopScanner() {
+  if (html5QrcodeScanner) {
+    try {
+      html5QrcodeScanner.clear();
+    } catch(e) {
+      console.error(e);
+    }
+    html5QrcodeScanner = null;
+  }
+}
+
+function onScanSuccess(decodedText) {
+  const resultDiv = document.getElementById('qr-result');
+  const asset = workingData.find(a => String(a.codigo) === decodedText || String(a.id) === decodedText);
+  if (asset) {
+    asset.estado = "Operativo";
+    refreshAll();
+    resultDiv.innerHTML = `<p style="color:var(--teal);"><strong style="font-size:18px;">✅ ¡Encontrado y Operativo!</strong><br>ID: ${asset.id} | Código: ${asset.codigo || 'S/C'}<br>${asset.detalle}</p>`;
+    resultDiv.style.borderColor = 'var(--teal)';
+    resultDiv.style.backgroundColor = 'rgba(59, 145, 68, 0.05)';
+  } else {
+    resultDiv.innerHTML = `<p style="color:var(--brick);">❌ Bien no encontrado en la base de datos.<br>Lectura: ${decodedText}</p>`;
+    resultDiv.style.borderColor = 'var(--brick)';
+    resultDiv.style.backgroundColor = 'rgba(220, 38, 38, 0.05)';
+  }
+}
+
+function onScanFailure(error) {
+  // Ignorar errores continuos mientras busca
+}
+
+// Interceptar clicks de menú para apagar/encender cámara
+document.querySelectorAll('.sidebar-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const viewId = link.dataset.view;
+    if (viewId === 'escaner') {
+      setTimeout(initScanner, 300);
+    } else {
+      stopScanner();
+    }
+  });
+});
+

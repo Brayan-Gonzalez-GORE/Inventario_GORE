@@ -12,6 +12,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 
 <body>
@@ -36,6 +38,7 @@
         <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de
             inventario</span></a>
         <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
+        <a class="sidebar-link" data-view="escaner"><span class="ico">📱</span><span class="label">Toma de Inventario</span></a>
         <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0;"></div>
         <a class="sidebar-link" data-view="personalizacion"><span class="ico">⚙️</span><span
             class="label">Personalización</span></a>
@@ -176,6 +179,7 @@
             <div style="display: flex; gap: 8px;">
               <button class="btn btn-secondary btn-sm" id="btn-bulk-move" style="display:none;">Mover Seleccionados
                 (0)</button>
+              <button class="btn btn-secondary btn-sm" id="btn-print-qr" style="display:none;">Imprimir Etiquetas QR</button>
               <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
             </div>
           </div>
@@ -215,6 +219,22 @@
           </div>
         </section>
       </main>
+
+      <div id="view-escaner" class="view" style="display:none;">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Toma de Inventario (Escáner Móvil)</h2>
+          </div>
+          <div class="panel-body" style="display:flex; flex-direction:column; align-items:center; gap:20px;">
+            <div style="max-width: 500px; width: 100%;">
+              <div id="qr-reader"></div>
+            </div>
+            <div id="qr-result" style="width: 100%; max-width: 500px; padding: 16px; border-radius: var(--radius); text-align:center; background: var(--surface); border: 1px solid var(--line);">
+              <p style="color:var(--ink-soft);">Escanea un código QR para marcar el bien como <strong>Operativo</strong>.</p>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div id="view-categorias" class="view">
         <section class="panel">
@@ -643,6 +663,8 @@
       <button type="button" class="btn btn-primary" id="btn-save-bulk-move">Mover Bienes</button>
     </div>
   </div>
+
+  <div id="print-area" class="print-area"></div>
 
   <!-- Scripts -->
   <script src="js/data.js"></script>
