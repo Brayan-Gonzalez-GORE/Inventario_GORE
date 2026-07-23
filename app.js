@@ -545,13 +545,15 @@ document.getElementById('btn-open-sidebar').addEventListener('click', ()=>{
     sidebar.classList.toggle('open');
     sidebarScrim.classList.toggle('open');
   } else {
-    dashboardShell.classList.toggle('sidebar-open');
+    const isOpen = dashboardShell.classList.toggle('sidebar-open');
+    dashboardShell.style.gridTemplateColumns = isOpen ? '260px minmax(0, 1fr)' : '0px minmax(0, 1fr)';
   }
 });
 function closeSidebar(){
   sidebar.classList.remove('open');
   sidebarScrim.classList.remove('open');
   dashboardShell.classList.remove('sidebar-open');
+  dashboardShell.style.gridTemplateColumns = '0px minmax(0, 1fr)';
 }
 document.getElementById('sidebar-scrim').addEventListener('click', closeSidebar);
 
