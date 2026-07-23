@@ -330,7 +330,7 @@ function renderTable(){
     const pageRows = filtered.slice(start, start+PAGE_SIZE);
     tbody.innerHTML = pageRows.map(r=>`
       <tr data-id="${r.id}">
-        ${COLUMNS.map(c=>`<td class="${c.num?'num':''} ${c.key==='id'?'mono':''} ${c.key==='detalle'?'detalle':''}">${c.render ? c.render(r) : (r[c.key]??'—')}</td>`).join('')}
+        ${COLUMNS.map(c=>`<td data-label="${c.label}" class="${c.num?'num':''} ${c.key==='id'?'mono':''} ${c.key==='detalle'?'detalle':''}">${c.render ? c.render(r) : (r[c.key]??'—')}</td>`).join('')}
       </tr>
     `).join('');
     tbody.querySelectorAll('tr').forEach(tr=>{
