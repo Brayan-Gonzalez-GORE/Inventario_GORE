@@ -777,15 +777,14 @@ function openFicha(id) {
     ['Valor libro actual', money(r.valorLibro, r.moneda)],
   ]);
 
-  if (r.anioBaja) {
+  if (r.anioBaja || r.fechaBaja) {
     html += fichaSection('Baja del bien', [
-      ['Año de baja', r.anioBaja],
+      ['Fecha de baja', r.fechaBaja ? r.fechaBaja.replace('T', ' ') : r.anioBaja],
       ['Resolución', r.resolucion],
       ['Vida útil al momento de baja', r.vidaBaja],
       ['Dep. acumulada a la baja', money(r.depBaja, r.moneda)],
       ['Valor libro a la baja', money(r.valorBaja, r.moneda)],
     ]);
-    if (r.obsBaja) html += `<div class="ficha-note">${r.obsBaja}</div>`;
   }
 
   html += fichaSection('Inventario físico', [
@@ -797,6 +796,15 @@ function openFicha(id) {
   if (r.obsInv) html += `<div class="ficha-note">${r.obsInv}</div>`;
 
   body.innerHTML = html;
+
+  const btnBaja = document.getElementById('btn-baja-asset');
+  if (btnBaja) {
+    if (r.anioBaja || r.fechaBaja || (r.estado && normEstado(r.estado) === 'De Baja')) {
+      btnBaja.style.display = 'none';
+    } else {
+      btnBaja.style.display = '';
+    }
+  }
 
   document.getElementById('ficha').classList.add('open');
   document.getElementById('ficha').setAttribute('aria-hidden', 'false');
@@ -828,8 +836,8 @@ const HEADER_MAP = [
   ['egreso', 'EGRESO'], ['fRecepcion', 'FECHA DE RECEPCIÓN'], ['valorCompra', 'VALOR BIEN COMPRADO'],
   ['mesesVida', 'MESES VIDA ÚTIL'], ['vidaActual', 'VIDA UTIL ACTUAL'], ['dep2024', 'DEPRECIACIÓN ACUMULADA 2024'],
   ['dep2025', 'DEPRECIACIÓN ACUMULADA 2025'], ['depAnio2025', 'DEPRECIACIÓN AÑO 2025'], ['valorLibro', 'VALOR DEL BIEN'],
-  ['anioBaja', 'AÑO DE BAJA'], ['resolucion', 'RESOLUCIÓN'], ['vidaBaja', 'VIDA UTIL AL MOMENTO DE BAJA'],
-  ['depBaja', 'DEPRECIACIÓN ACUMULADA'], ['valorBaja', 'VALOR DEL BIEN'], ['obsBaja', 'OBSERVACIONES'],
+  ['anioBaja', 'AÑO DE BAJA'], ['fechaBaja', 'FECHA EXACTA DE BAJA'], ['resolucion', 'RESOLUCIÓN'], ['vidaBaja', 'VIDA UTIL AL MOMENTO DE BAJA'],
+  ['depBaja', 'DEPRECIACIÓN ACUMULADA'], ['valorBaja', 'VALOR DEL BIEN'],
   ['codigo', 'Código QR/Barras/N°Serie'], ['ubicacion', 'Ubicación'], ['fRegistro', 'Fecha Registro/Modificación'],
   ['responsable', 'Responsable Registro'], ['estado', 'Estado'], ['obsInv', 'Observaciones'],
 ];
@@ -2012,11 +2020,11 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
       // Retain baja info when editing normal info
       const old = workingData[idx];
       asset.anioBaja = old.anioBaja;
+      asset.fechaBaja = old.fechaBaja;
       asset.resolucion = old.resolucion;
       asset.vidaBaja = old.vidaBaja;
       asset.depBaja = old.depBaja;
       asset.valorBaja = old.valorBaja;
-      asset.obsBaja = old.obsBaja;
       workingData[idx] = asset;
     }
   }
@@ -2038,15 +2046,14 @@ const bajaForm = document.getElementById('baja-form');
 function openBajaModal(id) {
   if (id === null) return;
   bajaForm.reset();
-
+  document.getElementById('baja-modal-title').textContent = 'Dar de Baja Bien N° ' + id;
   const r = workingData.find(x => x.id === id);
   if (r) {
-    document.getElementById('baja-anioBaja').value = r.anioBaja || new Date().getFullYear();
+    document.getElementById('baja-fechaBaja').value = r.fechaBaja || '';
     document.getElementById('baja-resolucion').value = r.resolucion || '';
     document.getElementById('baja-vidaBaja').value = r.vidaActual || r.vidaBaja || '';
     document.getElementById('baja-depBaja').value = formatCL(r.depAnio2025 || r.depBaja || '');
     document.getElementById('baja-valorBaja').value = formatCL(r.valorLibro || r.valorBaja || '');
-    document.getElementById('baja-obsBaja').value = r.obsBaja || '';
   }
 
   if (bajaModalScrim) bajaModalScrim.classList.add('open');
@@ -2063,6 +2070,12 @@ function closeBajaModal() {
 document.getElementById('btn-close-baja')?.addEventListener('click', closeBajaModal);
 document.getElementById('btn-cancel-baja')?.addEventListener('click', closeBajaModal);
 document.getElementById('baja-modal-scrim')?.addEventListener('click', closeBajaModal);
+
+document.getElementById('btn-fecha-actual')?.addEventListener('click', () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  document.getElementById('baja-fechaBaja').value = d.toISOString().slice(0, 16);
+});
 
 document.getElementById('btn-baja-asset')?.addEventListener('click', () => {
   if (currentFichaId !== null) openBajaModal(currentFichaId);
@@ -2081,12 +2094,13 @@ document.getElementById('btn-save-baja')?.addEventListener('click', () => {
 
   const idx = workingData.findIndex(x => x.id === currentFichaId);
   if (idx !== -1) {
-    workingData[idx].anioBaja = num(document.getElementById('baja-anioBaja').value);
+    const fb = document.getElementById('baja-fechaBaja').value;
+    workingData[idx].fechaBaja = fb;
+    workingData[idx].anioBaja = fb ? new Date(fb).getFullYear() : null;
     workingData[idx].resolucion = str(document.getElementById('baja-resolucion').value);
     workingData[idx].vidaBaja = num(document.getElementById('baja-vidaBaja').value);
     workingData[idx].depBaja = parseCL(document.getElementById('baja-depBaja').value);
     workingData[idx].valorBaja = parseCL(document.getElementById('baja-valorBaja').value);
-    workingData[idx].obsBaja = str(document.getElementById('baja-obsBaja').value);
 
     // Auto-cambiar estado a De Baja
     workingData[idx].estado = "De Baja";
