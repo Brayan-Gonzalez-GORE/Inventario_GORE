@@ -249,11 +249,11 @@
 <div class="scrim" id="scrim"></div>
 <aside class="ficha" id="ficha" aria-hidden="true">
   <div class="ficha-head">
-    <div>
+    <div style="flex: 1; min-width: 0; padding-right: 12px;">
       <p class="ficha-head-eyebrow">Ficha de activo N° <span id="ficha-id"></span></p>
-      <h2 id="ficha-titulo"></h2>
+      <h2 id="ficha-titulo" style="word-wrap: break-word;"></h2>
     </div>
-    <div style="display: flex; gap: 8px; align-items: flex-start;">
+    <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; max-width: 140px;">
       <button class="btn btn-line btn-sm" id="btn-edit-asset" style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar ✏️</button>
       <button class="btn btn-line btn-sm" id="btn-baja-asset" style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja ⛔</button>
       <button class="btn btn-line btn-sm" id="btn-delete-asset" style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar 🗑️</button>
@@ -284,12 +284,12 @@
               <div class="field"><label>Código / N° Serie</label><input type="text" id="crud-codigo"></div>
             </div>
             <div class="form-section">
-              <h3>Depreciación (Manual)</h3>
-              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual"></div>
-              <div class="field"><label>Depreciación Acumulada 2024</label><input type="number" id="crud-dep2024"></div>
-              <div class="field"><label>Depreciación Acumulada 2025</label><input type="number" id="crud-dep2025"></div>
-              <div class="field"><label>Depreciación Año 2025</label><input type="number" id="crud-depAnio2025"></div>
-              <div class="field"><label>Valor Libro</label><input type="number" id="crud-valorLibro"></div>
+              <h3>Depreciación (Automática)</h3>
+              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada 2024</label><input type="number" id="crud-dep2024" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada 2025</label><input type="number" id="crud-dep2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Año 2025</label><input type="number" id="crud-depAnio2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Valor Libro</label><input type="number" id="crud-valorLibro" readonly style="background:#f1f5f9; color:#64748b; font-weight:bold;"></div>
             </div>
           </div>
           
