@@ -561,7 +561,12 @@ document.querySelectorAll('.sidebar-link').forEach(link=>{
     if(view==='ubicaciones') renderUbicaciones();
     if(view==='estados') renderEstados();
     if(view==='usuarios') renderUsuarios();
-    closeSidebar();
+    
+    // Solo cerrar automáticamente en pantallas móviles pequeñas si se desea, 
+    // pero por requerimiento se mantiene abierto para cierre manual.
+    if (window.innerWidth <= 900) {
+      closeSidebar();
+    }
   });
 });
 
