@@ -541,19 +541,12 @@ const sidebar = document.getElementById('sidebar');
 const sidebarScrim = document.getElementById('sidebar-scrim');
 
 document.getElementById('btn-open-sidebar').addEventListener('click', ()=>{
-  if (window.innerWidth <= 900) {
-    sidebar.classList.toggle('open');
-    sidebarScrim.classList.toggle('open');
-  } else {
-    const isOpen = dashboardShell.classList.toggle('sidebar-open');
-    dashboardShell.style.gridTemplateColumns = isOpen ? '260px minmax(0, 1fr)' : '0px minmax(0, 1fr)';
-  }
+  dashboardShell.classList.toggle('sidebar-open');
+  sidebarScrim.classList.toggle('open');
 });
 function closeSidebar(){
-  sidebar.classList.remove('open');
-  sidebarScrim.classList.remove('open');
   dashboardShell.classList.remove('sidebar-open');
-  dashboardShell.style.gridTemplateColumns = '0px minmax(0, 1fr)';
+  sidebarScrim.classList.remove('open');
 }
 document.getElementById('sidebar-scrim').addEventListener('click', closeSidebar);
 
