@@ -679,18 +679,18 @@ function renderBarChart() {
   const entries = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
   const max = Math.max(...entries.map(e => e[1]), 1);
   const W = 640, H = 220, padL = 8, padR = 8, barH = 26, gap = 12;
-  const barStartX = 220;
-  const chartW = W - padL - padR - 220;
+  const barStartX = 280;
+  const chartW = W - padL - padR - barStartX;
   let svgHtml = '';
   entries.forEach((([name, val], i) => {
     const y = i * (barH + gap) + 8;
     const w = Math.max(2, (val / max) * chartW);
     const color = CHART_COLORS[i % CHART_COLORS.length];
     svgHtml += `
-      <text x="${barStartX - 10}" y="${y + barH / 2 + 4}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4B5563">${catLabel(name)}</text>
-      <rect x="${barStartX}" y="${y}" width="${chartW}" height="${barH}" fill="#E2E8F0"></rect>
+      <text x="${barStartX - 10}" y="${y + barH / 2 + 4}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="var(--slate)">${catLabel(name)}</text>
+      <rect x="${barStartX}" y="${y}" width="${chartW}" height="${barH}" fill="var(--line-soft)"></rect>
       <rect x="${barStartX}" y="${y}" width="${w}" height="${barH}" fill="${color}"></rect>
-      <text x="${barStartX + chartW + 8}" y="${y + barH / 2 + 4}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#0F172A">${moneyShort(val)}</text>
+      <text x="${barStartX + chartW + 8}" y="${y + barH / 2 + 4}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="var(--ink)">${moneyShort(val)}</text>
     `;
   }));
   svg.setAttribute('viewBox', `0 0 640 ${entries.length * (barH + gap) + 16}`);
@@ -719,15 +719,15 @@ function renderDonut() {
     const a1 = angle * Math.PI / 180, a2 = (angle + sweep) * Math.PI / 180;
     const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
     const x2 = cx + r * Math.cos(a2), y2 = cy + r * Math.sin(a2);
-    const color = colorMap[name] || '#5B6472';
+    const color = colorMap[name] || 'var(--slate)';
     paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${color}"></path>`;
     angle += sweep;
   });
-  svg.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="${rInner}" fill="#FFFFFF"></circle>
-    <text x="${cx}" y="${cy - 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#0F172A">${total}</text>
-    <text x="${cx}" y="${cy + 13}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748B">BIENES</text>`;
+  svg.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="${rInner}" fill="var(--white)"></circle>
+    <text x="${cx}" y="${cy - 3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="var(--ink)">${total}</text>
+    <text x="${cx}" y="${cy + 13}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--slate)">BIENES</text>`;
   legend.innerHTML = entries.map(([name, val]) => `
-    <li><span class="legend-swatch" style="background:${colorMap[name] || '#5B6472'}"></span>
+    <li><span class="legend-swatch" style="background:${colorMap[name] || 'var(--slate)'}"></span>
     <span class="legend-name">${name}</span>
     <span class="legend-val">${val} · ${((val / total) * 100).toFixed(0)}%</span></li>
   `).join('');
@@ -1131,7 +1131,7 @@ function renderUbicaciones() {
   let html = '';
 
   if (!adminData.divisiones || adminData.divisiones.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 24px; color:#94a3b8;">No hay ubicaciones registradas</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 24px; color:var(--slate);">No hay ubicaciones registradas</td></tr>';
     return;
   }
 
@@ -1141,7 +1141,7 @@ function renderUbicaciones() {
     const edfStr = div.edificio ? `🏢 ${div.edificio}` : '';
     let meta = '';
     if (dirStr || edfStr) {
-      meta = `<div style="font-size:11px; color:#94a3b8; margin-top:4px;">${dirStr} ${edfStr}</div>`;
+      meta = `<div style="font-size:11px; color:var(--slate); margin-top:4px;">${dirStr} ${edfStr}</div>`;
     }
 
     html += `<tr>
@@ -1158,7 +1158,7 @@ function renderUbicaciones() {
     // Unidades
     div.unidades.forEach(uni => {
       html += `<tr>
-        <td style="padding-left: 32px; font-weight:500; font-size:13px; color:#475569; border-left: 2px solid #e2e8f0;">
+        <td style="padding-left: 32px; font-weight:500; font-size:13px; color:var(--ink-soft); border-left: 2px solid var(--line-soft);">
           📁 ${uni.nombre}
         </td>
         <td style="white-space:nowrap; text-align:right;">
@@ -1170,7 +1170,7 @@ function renderUbicaciones() {
       // Dependencias
       uni.dependencias.forEach(dep => {
         html += `<tr>
-          <td style="padding-left: 56px; font-size:13px; color:#64748b; border-left: 2px solid #e2e8f0;">
+          <td style="padding-left: 56px; font-size:13px; color:var(--slate); border-left: 2px solid var(--line-soft);">
             ↳ ${dep.nombre}
           </td>
           <td style="white-space:nowrap; text-align:right;">
@@ -2641,4 +2641,26 @@ document.querySelectorAll('.sidebar-link').forEach(link => {
     }
   });
 });
+
+/* ===== DARK MODE TOGGLE ===== */
+const btnThemeToggle = document.getElementById('btn-theme-toggle');
+if (btnThemeToggle) {
+  // Inicializar estado
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+    btnThemeToggle.textContent = '☀️';
+  }
+  
+  // Event listener
+  btnThemeToggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    if (document.body.classList.contains('dark-mode')) {
+      localStorage.setItem('theme', 'dark');
+      btnThemeToggle.textContent = '☀️';
+    } else {
+      localStorage.setItem('theme', 'light');
+      btnThemeToggle.textContent = '🌙';
+    }
+  });
+}
 

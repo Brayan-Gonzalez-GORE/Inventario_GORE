@@ -39,7 +39,8 @@
         <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de
             inventario</span></a>
         <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
-        <a class="sidebar-link" data-view="escaner"><span class="ico">📱</span><span class="label">Toma de Inventario</span></a>
+        <a class="sidebar-link" data-view="escaner"><span class="ico">📱</span><span class="label">Toma de
+            Inventario</span></a>
         <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0;"></div>
         <a class="sidebar-link" data-view="personalizacion"><span class="ico">⚙️</span><span
             class="label">Personalización</span></a>
@@ -52,15 +53,16 @@
           <div style="display:flex; align-items:flex-end; gap:10px;">
             <button class="sidebar-toggle" id="btn-open-sidebar" aria-label="Abrir menú">☰</button>
             <div>
-              <p class="brand-eyebrow">Ficha N° 01 — Dirección de Administración y Finanzas</p>
+              <p class="brand-eyebrow">Division de Administración y Finanzas</p>
               <h1 class="brand-title">Control de Activos Fijos <em>&amp; Depreciación</em></h1>
             </div>
           </div>
 
           <div class="topbar-actions">
+            <button class="btn btn-ghost btn-sm" id="btn-theme-toggle" title="Alternar Modo Oscuro/Claro" style="font-size: 14px; margin-right: 8px;">🌙</button>
             <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
             <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
-            <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar filtrado (CSV)</button>
+            <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar CSV</button>
           </div>
         </div>
       </div>
@@ -178,7 +180,8 @@
             <div style="display: flex; gap: 8px;">
               <button class="btn btn-secondary btn-sm" id="btn-bulk-move" style="display:none;">Mover Seleccionados
                 (0)</button>
-              <button class="btn btn-secondary btn-sm" id="btn-print-qr" style="display:none;">Imprimir Etiquetas QR</button>
+              <button class="btn btn-secondary btn-sm" id="btn-print-qr" style="display:none;">Imprimir Etiquetas
+                QR</button>
               <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
             </div>
           </div>
@@ -223,21 +226,24 @@
         <datalist id="lista-marcas"></datalist>
         <datalist id="lista-modelos"></datalist>
         <datalist id="lista-ubicaciones"></datalist>
-        
+
         <section class="panel" style="max-width: 700px; margin: 0 auto;">
           <div class="panel-head">
             <h2 class="panel-title">📱 Escáner de Inventario TI</h2>
           </div>
           <div class="panel-body" style="display:flex; flex-direction:column; align-items:stretch; gap:20px;">
-            <div id="qr-reader" style="width: 100%; border-radius: var(--radius); overflow: hidden; background: #000;"></div>
-            
-            <form id="escaner-form" class="admin-form" style="flex-direction: column; align-items: stretch;" onsubmit="event.preventDefault(); enviarDatosScanner();">
+            <div id="qr-reader" style="width: 100%; border-radius: var(--radius); overflow: hidden; background: #000;">
+            </div>
+
+            <form id="escaner-form" class="admin-form" style="flex-direction: column; align-items: stretch;"
+              onsubmit="event.preventDefault(); enviarDatosScanner();">
               <div class="form-section">
                 <div class="field">
                   <label for="scan-codigo">Código QR / Barras / N° Serie</label>
-                  <input type="text" id="scan-codigo" placeholder="Escanee o digite el identificador principal..." required>
+                  <input type="text" id="scan-codigo" placeholder="Escanee o digite el identificador principal..."
+                    required>
                 </div>
-                
+
                 <div class="form-grid" style="gap:16px;">
                   <div class="field">
                     <label for="scan-tipo">Tipo de Equipo *</label>
@@ -257,7 +263,8 @@
                   </div>
                   <div class="field">
                     <label for="scan-marca">Marca *</label>
-                    <input type="text" id="scan-marca" list="lista-marcas" placeholder="Ej: HP, Lenovo, Samsung" required>
+                    <input type="text" id="scan-marca" list="lista-marcas" placeholder="Ej: HP, Lenovo, Samsung"
+                      required>
                   </div>
                 </div>
 
@@ -273,12 +280,16 @@
                 </div>
 
                 <div class="form-grid" style="gap:16px;">
-                  <div class="field"><label>División / Repartición *</label><select id="scan-ubi-division" required></select></div>
-                  <div class="field"><label>Departamento / Unidad *</label><select id="scan-ubi-unidad" required disabled></select></div>
+                  <div class="field"><label>División / Repartición *</label><select id="scan-ubi-division"
+                      required></select></div>
+                  <div class="field"><label>Departamento / Unidad *</label><select id="scan-ubi-unidad" required
+                      disabled></select></div>
                 </div>
 
                 <div class="form-grid" style="gap:16px;">
-                  <div class="field"><label>Dependencia (Opcional)</label><select id="scan-ubi-dependencia" disabled><option value="">-- Ninguna --</option></select></div>
+                  <div class="field"><label>Dependencia (Opcional)</label><select id="scan-ubi-dependencia" disabled>
+                      <option value="">-- Ninguna --</option>
+                    </select></div>
                   <div class="field">
                     <label for="scan-estado">Estado operativo</label>
                     <select id="scan-estado" onchange="guardarPreferenciasScanner()">
@@ -292,21 +303,27 @@
                   </div>
                 </div>
                 <input type="hidden" id="scan-ubicacion">
-                
+
                 <div class="field">
                   <label for="scan-responsable">Responsable Registro *</label>
-                  <input type="text" id="scan-responsable" onchange="guardarPreferenciasScanner()" placeholder="Tu Nombre" required>
+                  <input type="text" id="scan-responsable" onchange="guardarPreferenciasScanner()"
+                    placeholder="Tu Nombre" required>
                 </div>
 
                 <div class="field">
                   <label for="scan-obs">Observaciones / Detalles adicionales</label>
-                  <textarea id="scan-obs" rows="2" style="font-family:var(--sans); font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius); width:100%;" placeholder="Detalles como 'Sin Cargador', 'Pantalla dañada', etc..."></textarea>
+                  <textarea id="scan-obs" rows="2"
+                    style="font-family:var(--sans); font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius); width:100%;"
+                    placeholder="Detalles como 'Sin Cargador', 'Pantalla dañada', etc..."></textarea>
                 </div>
               </div>
-              
-              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:16px;">Guardar e Inventariar Equipo</button>
-              
-              <div id="scan-status" style="text-align:center; font-size:13px; font-weight:600; margin-top:16px; padding:12px; border-radius:var(--radius); display:none;"></div>
+
+              <button type="submit" class="btn btn-primary"
+                style="width:100%; justify-content:center; margin-top:16px;">Guardar e Inventariar Equipo</button>
+
+              <div id="scan-status"
+                style="text-align:center; font-size:13px; font-weight:600; margin-top:16px; padding:12px; border-radius:var(--radius); display:none;">
+              </div>
             </form>
           </div>
         </section>
@@ -533,7 +550,7 @@
       </div>
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <button class="btn btn-line btn-sm" id="btn-edit-asset"
-          style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar
+          style="background: rgba(255,255,255,0.1); color: #FFFFFF; border-color: rgba(255,255,255,0.2);">Editar
           ✎</button>
         <button class="btn btn-line btn-sm" id="btn-baja-asset"
           style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja
@@ -724,7 +741,8 @@
     <div class="crud-modal-body">
       <form id="bulk-move-form" class="admin-form">
         <p style="margin-bottom: 16px; color: var(--slate-600); font-size: 14px;">Selecciona la nueva ubicación para los
-          <strong id="bulk-move-count">0</strong> bienes seleccionados.</p>
+          <strong id="bulk-move-count">0</strong> bienes seleccionados.
+        </p>
         <div class="field"><label>División / Repartición</label><select id="bulk-ubi-division" required></select></div>
         <div class="field"><label>Departamento / Unidad</label><select id="bulk-ubi-unidad" required disabled></select>
         </div>
@@ -741,7 +759,8 @@
   </div>
 
   <div class="modal-scrim" id="print-modal-scrim">
-    <div class="crud-modal" id="print-modal" role="dialog" aria-modal="true" aria-hidden="true" style="max-width:400px; padding: 24px;">
+    <div class="crud-modal" id="print-modal" role="dialog" aria-modal="true" aria-hidden="true"
+      style="max-width:400px; padding: 24px;">
       <div class="crud-modal-header">
         <h2 id="print-modal-title">Opciones de Impresión</h2>
         <button class="link-reset btn-close" id="btn-close-print-modal" aria-label="Cerrar modal">×</button>

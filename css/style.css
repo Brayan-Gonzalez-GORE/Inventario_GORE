@@ -706,3 +706,58 @@ footer{
     margin-bottom: 5px;
   }
 }
+
+/* ===== DARK MODE ===== */
+body.dark-mode {
+  --paper: #0F172A;
+  --paper-alt: #1E293B;
+  --ink: #F8FAFC;
+  --ink-soft: #F8FAFC;
+  --line: #334155;
+  --line-soft: #475569;
+  --slate: #F8FAFC;
+  --slate-soft: #334155;
+  --white: #1E293B;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.5), 0 2px 4px -2px rgba(0,0,0,0.4);
+  color-scheme: dark;
+}
+
+body.dark-mode .sidebar, 
+body.dark-mode .topbar {
+  background-color: #020617;
+  border-right-color: #1E293B;
+  color: #F8FAFC;
+}
+body.dark-mode .topbar {
+  border-bottom-color: var(--primary);
+}
+body.dark-mode .sidebar-toggle {
+  color: #F8FAFC;
+}
+body.dark-mode .btn-primary {
+  color: #FFFFFF;
+}
+body.dark-mode .ficha-head {
+  background-color: #020617;
+  color: #F8FAFC;
+}
+body.dark-mode .app-area { background: var(--paper); }
+body.dark-mode .sidebar-link:hover { background: #1E293B; }
+body.dark-mode .sidebar-link.active { background: var(--primary-hover); }
+body.dark-mode input[type="file"]::file-selector-button {
+  background: var(--line);
+  color: var(--ink);
+}
+body.dark-mode .crud-modal-scrim { background: rgba(0,0,0,0.7); }
+body.dark-mode .crud-modal { box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+body.dark-mode #qr-reader { border: 1px solid var(--line); }
+
+/* Corrección de textos que usaban colores estáticos (grises/dorados) */
+body.dark-mode .brand-title em,
+body.dark-mode .brand-eyebrow,
+body.dark-mode .ficha-head-eyebrow,
+body.dark-mode .sidebar-head p,
+body.dark-mode .sidebar-link {
+  color: #F8FAFC; 
+}
+body.dark-mode .qr-card p { color: var(--ink); }
