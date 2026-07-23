@@ -263,16 +263,18 @@
 
 <div class="scrim" id="scrim"></div>
 <aside class="ficha" id="ficha" aria-hidden="true">
-  <div class="ficha-head">
-    <div style="flex: 1; min-width: 0; padding-right: 12px;">
-      <p class="ficha-head-eyebrow">Ficha de activo N° <span id="ficha-id"></span></p>
-      <h2 id="ficha-titulo" style="word-wrap: break-word;"></h2>
+  <div class="ficha-head" style="flex-direction: column; align-items: stretch; gap: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+      <div>
+        <p class="ficha-head-eyebrow" id="ficha-id-line">FICHA DE ACTIVO N° <span id="ficha-id"></span></p>
+        <h2 id="ficha-titulo">Detalle</h2>
+      </div>
+      <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">×</button>
     </div>
-    <div style="display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; max-width: 140px;">
-      <button class="btn btn-line btn-sm" id="btn-edit-asset" style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar ✏️</button>
-      <button class="btn btn-line btn-sm" id="btn-baja-asset" style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja ⛔</button>
-      <button class="btn btn-line btn-sm" id="btn-delete-asset" style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar 🗑️</button>
-      <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">✕</button>
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <button class="btn btn-line btn-sm" id="btn-edit-asset" style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar ✎</button>
+      <button class="btn btn-line btn-sm" id="btn-baja-asset" style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja ↓</button>
+      <button class="btn btn-line btn-sm" id="btn-delete-asset" style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar 🗑</button>
     </div>
   </div>
   <div class="ficha-scroll" id="ficha-body"></div>
