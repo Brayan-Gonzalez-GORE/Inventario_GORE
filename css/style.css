@@ -103,6 +103,8 @@ body{
 .btn:focus-visible{ outline:2px solid var(--primary); outline-offset:2px; }
 .btn-primary{ background:var(--primary); color:var(--white); }
 .btn-primary:hover{ background:var(--primary-hover); }
+.btn-secondary{ background:var(--slate); color:var(--white); }
+.btn-secondary:hover{ background:#475569; }
 .btn-ghost{ background:transparent; color:var(--paper); border-color:#4A5262; }
 .btn-ghost:hover{ background:rgba(255,255,255,0.08); }
 .btn-line{ background:var(--white); color:var(--ink); border-color:var(--line); }
@@ -246,11 +248,11 @@ main,
 .link-reset{ background:none; border:none; color:var(--primary); font-family:var(--sans); font-size:12px; font-weight:600; cursor:pointer; padding:0; }
 .link-reset:hover{ text-decoration:underline; }
 
-/* ===== Table ===== */
-.table-scroll{ overflow-x:auto; }
+/* ===== Table view ===== */
+.table-scroll{ overflow-x:auto; max-height:480px; overflow-y:auto; border-bottom:1px solid var(--line-soft); overscroll-behavior:contain; }
 table{ width:100%; border-collapse:collapse; font-size:12.5px; }
 thead th{
-  position:sticky; top:0;
+  position:sticky; top:0; z-index:10;
   background:var(--ink);
   color:var(--paper);
   text-align:left;
@@ -539,7 +541,7 @@ footer{
 }
 @media (max-width:900px){
   /* Table to Cards */
-  .table-scroll { overflow: visible; padding:0; }
+  .table-scroll { overflow: visible; max-height: none; overflow-y: visible; padding:0; overscroll-behavior: auto; }
   table { border:0; width: 100%; }
   table thead { display: none; }
   table tr { 
@@ -618,3 +620,5 @@ footer{
   .admin-form{ flex-direction:column; align-items:stretch; }
   .admin-form .btn{ width:100%; justify-content:center; }
 }
+
+.selected-row td{ background-color: rgba(0, 83, 154, 0.05); }

@@ -94,7 +94,7 @@
           <div class="panel-body">
             <div class="filters">
               <div class="field grow">
-                <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
+                <label for="f-search">Buscar (detalle, serie, ID)</label>
                 <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
               </div>
               <div class="field">
@@ -130,7 +130,11 @@
         <section class="panel">
           <div class="panel-head">
             <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
-            <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-sm" id="btn-bulk-move" style="display:none;">Mover Seleccionados
+                (0)</button>
+              <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
+            </div>
           </div>
           <div class="table-scroll">
             <table>
@@ -145,7 +149,19 @@
             <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
           </div>
           <div class="pagination">
-            <span id="page-info"></span>
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <span id="page-info"></span>
+              <div style="display:inline-flex; align-items:center; gap:6px;">
+                <label for="page-size-select" style="font-size:12px; color:var(--ink-soft);">Mostrar:</label>
+                <select id="page-size-select"
+                  style="font-size:12px; padding:4px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); font-family:var(--sans); cursor:pointer;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
             <div class="page-btns">
               <button id="page-first">« Primera</button>
               <button id="page-prev">‹ Anterior</button>
@@ -180,6 +196,28 @@
               </thead>
               <tbody id="tbody-categorias"></tbody>
             </table>
+          </div>
+          <div class="pagination">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <span id="cat-page-info"></span>
+              <div style="display:inline-flex; align-items:center; gap:6px;">
+                <label for="cat-page-size" style="font-size:12px; color:var(--ink-soft);">Mostrar:</label>
+                <select id="cat-page-size"
+                  style="font-size:12px; padding:4px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); font-family:var(--sans); cursor:pointer;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+            <div class="page-btns">
+              <button id="cat-page-first">« Primera</button>
+              <button id="cat-page-prev">‹ Anterior</button>
+              <span id="cat-page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+              <button id="cat-page-next">Siguiente ›</button>
+              <button id="cat-page-last">Última »</button>
+            </div>
           </div>
         </section>
       </div>
@@ -235,6 +273,28 @@
               <tbody id="tbody-estados"></tbody>
             </table>
           </div>
+          <div class="pagination">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <span id="est-page-info"></span>
+              <div style="display:inline-flex; align-items:center; gap:6px;">
+                <label for="est-page-size" style="font-size:12px; color:var(--ink-soft);">Mostrar:</label>
+                <select id="est-page-size"
+                  style="font-size:12px; padding:4px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); font-family:var(--sans); cursor:pointer;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+            <div class="page-btns">
+              <button id="est-page-first">« Primera</button>
+              <button id="est-page-prev">‹ Anterior</button>
+              <span id="est-page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+              <button id="est-page-next">Siguiente ›</button>
+              <button id="est-page-last">Última »</button>
+            </div>
+          </div>
         </section>
       </div>
 
@@ -270,6 +330,28 @@
               </thead>
               <tbody id="tbody-usuarios"></tbody>
             </table>
+          </div>
+          <div class="pagination">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <span id="usr-page-info"></span>
+              <div style="display:inline-flex; align-items:center; gap:6px;">
+                <label for="usr-page-size" style="font-size:12px; color:var(--ink-soft);">Mostrar:</label>
+                <select id="usr-page-size"
+                  style="font-size:12px; padding:4px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); font-family:var(--sans); cursor:pointer;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+            <div class="page-btns">
+              <button id="usr-page-first">« Primera</button>
+              <button id="usr-page-prev">‹ Anterior</button>
+              <span id="usr-page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+              <button id="usr-page-next">Siguiente ›</button>
+              <button id="usr-page-last">Última »</button>
+            </div>
           </div>
         </section>
       </div>
@@ -386,9 +468,13 @@
             </div>
             <div class="form-section">
               <h3>Estado y Ubicación</h3>
-              <div class="field"><label>División / Repartición</label><select id="crud-ubi-division" required></select></div>
-              <div class="field"><label>Departamento / Unidad</label><select id="crud-ubi-unidad" required disabled></select></div>
-              <div class="field"><label>Dependencia (Opcional)</label><select id="crud-ubi-dependencia" disabled><option value="">-- Ninguna --</option></select></div>
+              <div class="field"><label>División / Repartición</label><select id="crud-ubi-division" required></select>
+              </div>
+              <div class="field"><label>Departamento / Unidad</label><select id="crud-ubi-unidad" required
+                  disabled></select></div>
+              <div class="field"><label>Dependencia (Opcional)</label><select id="crud-ubi-dependencia" disabled>
+                  <option value="">-- Ninguna --</option>
+                </select></div>
               <input type="hidden" id="crud-ubicacion">
               <div class="field"><label>Estado</label><select id="crud-estado"></select></div>
               <div class="field"><label>Responsable</label><input type="text" id="crud-responsable"></div>
@@ -455,27 +541,27 @@
                 <option value="dependencia">3. Dependencia (Oficina, Bodega)</option>
               </select>
             </div>
-            
+
             <div class="field" id="tree-field-division" style="grid-column: 1 / -1; display: none;">
               <label>Selecciona División Padre</label>
               <select id="tree-sel-division"></select>
             </div>
-            
+
             <div class="field" id="tree-field-unidad" style="grid-column: 1 / -1; display: none;">
               <label>Selecciona Unidad Padre</label>
               <select id="tree-sel-unidad"></select>
             </div>
-            
+
             <div class="field" style="grid-column: 1 / -1;">
               <label id="tree-lbl-nombre">Nombre</label>
               <input type="text" id="tree-nombre" required>
             </div>
-            
+
             <div class="field" id="tree-field-direccion" style="grid-column: 1 / -1; display: none;">
               <label>Dirección</label>
               <input type="text" id="tree-direccion" placeholder="Ej: Av. Décima Región #480, Puerto Montt">
             </div>
-            
+
             <div class="field" id="tree-field-edificio" style="grid-column: 1 / -1; display: none;">
               <label>Edificio</label>
               <input type="text" id="tree-edificio" placeholder="Ej: Edificio Anexo">
@@ -490,6 +576,32 @@
     </div>
   </div>
 
+  <div class="crud-modal-scrim" id="bulk-move-modal-scrim"></div>
+  <div class="crud-modal" id="bulk-move-modal" aria-hidden="true" style="max-width: 500px;">
+    <div class="crud-modal-header">
+      <h3 id="bulk-move-modal-title">Mover Bienes Seleccionados</h3>
+      <button class="crud-modal-close" id="btn-close-bulk-move" aria-label="Cerrar modal">✕</button>
+    </div>
+    <div class="crud-modal-body">
+      <form id="bulk-move-form" class="admin-form">
+        <p style="margin-bottom: 16px; color: var(--slate-600); font-size: 14px;">Selecciona la nueva ubicación para los
+          <strong id="bulk-move-count">0</strong> bienes seleccionados.</p>
+        <div class="field"><label>División / Repartición</label><select id="bulk-ubi-division" required></select></div>
+        <div class="field"><label>Departamento / Unidad</label><select id="bulk-ubi-unidad" required disabled></select>
+        </div>
+        <div class="field"><label>Dependencia (Opcional)</label><select id="bulk-ubi-dependencia" disabled>
+            <option value="">-- Ninguna --</option>
+          </select></div>
+        <input type="hidden" id="bulk-ubicacion">
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-bulk-move">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-bulk-move">Mover Bienes</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
 </body>
