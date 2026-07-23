@@ -26,10 +26,20 @@ body{
   font-family:var(--sans);
   background:var(--paper);
   color:var(--ink);
+  min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+}
+
+.dashboard-shell{
+  min-height:100vh;
+}
+.app-area{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
 }
 
 /* ===== Top bar ===== */
@@ -91,7 +101,13 @@ body{
 input[type=file]{ display:none; }
 
 /* ===== Layout ===== */
-main{ max-width:1400px; margin:0 auto; padding:28px 32px 64px; }
+main,
+.view{
+  max-width:1400px;
+  width:100%;
+  margin:0 auto;
+  padding:28px 32px 64px;
+}
 
 /* ===== KPI strip ===== */
 .kpi-grid{
@@ -369,10 +385,35 @@ footer{
   .kpi-grid{ grid-template-columns:repeat(3,1fr); }
   .charts-row{ grid-template-columns:1fr; }
 }
+@media (max-width:900px){
+  .sidebar{
+    position:fixed;
+    top:0; left:0;
+    width:min(82vw, 260px);
+    height:100%;
+    transform:translateX(-100%);
+    z-index:51;
+  }
+  .sidebar.open{ transform:translateX(0); }
+  .sidebar-scrim{ display:block; }
+  main,
+  .view{ padding:20px 16px 48px; }
+}
 @media (max-width:640px){
   .kpi-grid{ grid-template-columns:repeat(2,1fr); }
-  main{ padding:20px 14px 48px; }
   .topbar{ padding:18px 16px; }
+  .topbar-inner{ align-items:flex-start; }
+  .topbar-actions{ width:100%; }
+  .topbar-actions .btn,
+  .topbar-actions label{ width:100%; justify-content:center; }
+  .brand-title{ font-size:24px; }
+  .field.grow input,
+  .field input[type=text],
+  .field select{ min-width:100%; }
+  .filters .field,
+  .filters .checkfield{ width:100%; }
+  .admin-form{ flex-direction:column; align-items:stretch; }
+  .admin-form .btn{ width:100%; justify-content:center; }
 }
 /* ===== Sidebar administrativo ===== */
 .sidebar-toggle{
@@ -384,10 +425,11 @@ footer{
 .sidebar-scrim{
   position:fixed; inset:0; background:rgba(28,36,48,0.42);
   opacity:0; pointer-events:none; transition:opacity 0.2s ease; z-index:50;
+  display:block;
 }
 .sidebar-scrim.open{ opacity:1; pointer-events:auto; }
 .sidebar{
-  position:fixed; top:0; left:0; height:100%;
+  position:fixed; top:0; left:0; height:100vh;
   width:260px; background:var(--ink); color:var(--paper);
   transform:translateX(-100%); transition:transform 0.25s ease;
   z-index:51; display:flex; flex-direction:column;
@@ -405,10 +447,12 @@ footer{
   padding:10px 12px; border-radius:var(--radius);
   color:#D8D5CC; text-decoration:none; font-size:13.5px; font-weight:500;
   cursor:pointer; margin-bottom:2px;
+  white-space:nowrap;
 }
 .sidebar-link:hover{ background:rgba(255,255,255,0.06); }
 .sidebar-link.active{ background:var(--brick); color:var(--white); }
-.sidebar-link .ico{ font-family:var(--mono); font-size:11px; opacity:0.7; width:18px; }
+.sidebar-link .ico{ font-family:var(--mono); font-size:11px; opacity:0.7; width:18px; flex-shrink:0; }
+.sidebar-link .label{ display:inline-block; }
 
 /* ===== Vistas administrativas (reutilizan .panel, .field, tabla) ===== */
 .view{ display:none; }

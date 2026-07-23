@@ -12,213 +12,216 @@
 </head>
 <body>
 <div class="sidebar-scrim" id="sidebar-scrim"></div>
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-head">
-    <p>Panel administrativo</p>
-    <h3>Configuración del sistema</h3>
+<div class="dashboard-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <p>Panel administrativo</p>
+      <h3>Configuración del sistema</h3>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="sidebar-link active" data-view="dashboard"><span class="ico">01</span><span class="label">Dashboard</span></a>
+      <a class="sidebar-link" data-view="categorias"><span class="ico">02</span><span class="label">Categorías contables</span></a>
+      <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span><span class="label">Ubicaciones</span></a>
+      <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de inventario</span></a>
+      <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
+    </nav>
+  </aside>
+
+  <div class="app-area">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div style="display:flex; align-items:flex-end; gap:10px;">
+          <button class="sidebar-toggle" id="btn-open-sidebar" aria-label="Abrir menú">☰</button>
+          <div>
+            <p class="brand-eyebrow">Ficha N° 01 — Dirección de Administración y Finanzas</p>
+            <h1 class="brand-title">Control de Activos Fijos <em>&amp; Depreciación</em></h1>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-restore" title="Volver a los datos originales cargados">↺ Restaurar datos</button>
+          <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
+          <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+          <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar filtrado (CSV)</button>
+        </div>
+      </div>
+    </div>
+
+    <main id="view-dashboard" class="view active">
+      <section class="kpi-grid" id="kpi-grid" aria-label="Indicadores generales"></section>
+      <section class="charts-row">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
+          </div>
+          <div class="panel-body">
+            <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220" preserveAspectRatio="xMinYMin meet"></svg>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
+          </div>
+          <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
+            <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
+            <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
+          <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
+        </div>
+        <div class="panel-body">
+          <div class="filters">
+            <div class="field grow">
+              <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
+              <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
+            </div>
+            <div class="field">
+              <label for="f-cat">Categoría contable</label>
+              <select id="f-cat"><option value="">Todas</option></select>
+            </div>
+            <div class="field">
+              <label for="f-ubicacion">Ubicación</label>
+              <select id="f-ubicacion"><option value="">Todas</option></select>
+            </div>
+            <div class="field">
+              <label for="f-estado">Estado inventario</label>
+              <select id="f-estado"><option value="">Todos</option></select>
+            </div>
+            <div class="checkfield">
+              <input type="checkbox" id="f-baja">
+              <label for="f-baja">Solo dados de baja</label>
+            </div>
+          </div>
+          <div class="filters-meta">
+            <span id="filter-summary"></span>
+            <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr id="thead-row"></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none;">
+          <h3>Sin resultados</h3>
+          <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
+        </div>
+        <div class="pagination">
+          <span id="page-info"></span>
+          <div class="page-btns">
+            <button id="page-first">« Primera</button>
+            <button id="page-prev">‹ Anterior</button>
+            <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+            <button id="page-next">Siguiente ›</button>
+            <button id="page-last">Última »</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="view-categorias" class="view">
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Categorías contables</h2>
+        </div>
+        <form class="admin-form" id="form-categoria">
+          <div class="field"><label>Código (cuenta)</label><input type="text" id="cat-key" placeholder="Ej: 14913" required></div>
+          <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="cat-label" placeholder="Ej: Herramientas y equipos menores" required></div>
+          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+        </form>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Código</th><th>Etiqueta</th><th style="width:100px;">Acciones</th></tr></thead>
+            <tbody id="tbody-categorias"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="view-ubicaciones" class="view">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Ubicaciones</h2></div>
+        <form class="admin-form" id="form-ubicacion">
+          <div class="field grow"><label>Nombre de la ubicación</label><input type="text" id="ubi-name" placeholder="Ej: Bodega Municipal" required></div>
+          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+        </form>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Ubicación</th><th style="width:100px;">Acciones</th></tr></thead>
+            <tbody id="tbody-ubicaciones"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="view-estados" class="view">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Estados de inventario</h2></div>
+        <form class="admin-form" id="form-estado">
+          <div class="field"><label>Nombre del estado</label><input type="text" id="estado-name" placeholder="Ej: En reparación" required></div>
+          <div class="field">
+            <label>Color de etiqueta</label>
+            <select id="estado-color">
+              <option value="teal">Verde (activo/ok)</option>
+              <option value="amber">Ámbar (pendiente)</option>
+              <option value="brick">Rojo (alerta/baja)</option>
+              <option value="slate">Gris (neutro)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+        </form>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Estado</th><th>Vista previa</th><th style="width:100px;">Acciones</th></tr></thead>
+            <tbody id="tbody-estados"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="view-usuarios" class="view">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Usuarios</h2></div>
+        <p class="admin-note">Módulo preliminar: aún no hay autenticación ni permisos reales — solo guarda la lista en esta sesión, como base para conectar a un backend más adelante.</p>
+        <form class="admin-form" id="form-usuario">
+          <div class="field"><label>Nombre</label><input type="text" id="usr-nombre" required></div>
+          <div class="field"><label>Correo</label><input type="email" id="usr-correo" required></div>
+          <div class="field">
+            <label>Rol</label>
+            <select id="usr-rol">
+              <option value="Administrador">Administrador</option>
+              <option value="Editor">Editor</option>
+              <option value="Solo lectura">Solo lectura</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+        </form>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th style="width:100px;">Acciones</th></tr></thead>
+            <tbody id="tbody-usuarios"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida para el sistema completo</footer>
   </div>
-  <nav class="sidebar-nav">
-    <a class="sidebar-link active" data-view="dashboard"><span class="ico">01</span> Dashboard</a>
-    <a class="sidebar-link" data-view="categorias"><span class="ico">02</span> Categorías contables</a>
-    <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span> Ubicaciones</a>
-    <a class="sidebar-link" data-view="estados"><span class="ico">04</span> Estados de inventario</a>
-    <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span> Usuarios</a>
-  </nav>
-</aside>
-<div class="topbar">
-  
-  <div class="topbar-inner">
-  <div style="display:flex; align-items:flex-end; gap:10px;">
-    <button class="sidebar-toggle" id="btn-open-sidebar" aria-label="Abrir menú">☰</button>
-    <div>
-      <p class="brand-eyebrow">Ficha N° 01 — Dirección de Administración y Finanzas</p>
-      <h1 class="brand-title">Control de Activos Fijos <em>&amp; Depreciación</em></h1>
-    </div>
-  </div>
-    
-    <div class="topbar-actions">
-      <button class="btn btn-ghost btn-sm" id="btn-restore" title="Volver a los datos originales cargados">↺ Restaurar datos</button>
-      <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
-      <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
-      <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar filtrado (CSV)</button>
-    </div>
-  </div>
 </div>
-
-<main id="view-dashboard" class="view active">
-  <section class="kpi-grid" id="kpi-grid" aria-label="Indicadores generales"></section>
-  <section class="charts-row">
-    <div class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
-      </div>
-      <div class="panel-body">
-        <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220" preserveAspectRatio="xMinYMin meet"></svg>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
-      </div>
-      <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
-        <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
-        <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
-      <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
-    </div>
-    <div class="panel-body">
-      <div class="filters">
-        <div class="field grow">
-          <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
-          <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
-        </div>
-        <div class="field">
-          <label for="f-cat">Categoría contable</label>
-          <select id="f-cat"><option value="">Todas</option></select>
-        </div>
-        <div class="field">
-          <label for="f-ubicacion">Ubicación</label>
-          <select id="f-ubicacion"><option value="">Todas</option></select>
-        </div>
-        <div class="field">
-          <label for="f-estado">Estado inventario</label>
-          <select id="f-estado"><option value="">Todos</option></select>
-        </div>
-        <div class="checkfield">
-          <input type="checkbox" id="f-baja">
-          <label for="f-baja">Solo dados de baja</label>
-        </div>
-      </div>
-      <div class="filters-meta">
-        <span id="filter-summary"></span>
-        <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr id="thead-row"></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="empty-state" class="empty-state" style="display:none;">
-      <h3>Sin resultados</h3>
-      <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
-    </div>
-    <div class="pagination">
-      <span id="page-info"></span>
-      <div class="page-btns">
-        <button id="page-first">« Primera</button>
-        <button id="page-prev">‹ Anterior</button>
-        <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
-        <button id="page-next">Siguiente ›</button>
-        <button id="page-last">Última »</button>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<div id="view-categorias" class="view">
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title">Categorías contables</h2>
-    </div>
-    <form class="admin-form" id="form-categoria">
-      <div class="field"><label>Código (cuenta)</label><input type="text" id="cat-key" placeholder="Ej: 14913" required></div>
-      <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="cat-label" placeholder="Ej: Herramientas y equipos menores" required></div>
-      <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-    </form>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Código</th><th>Etiqueta</th><th style="width:100px;">Acciones</th></tr></thead>
-        <tbody id="tbody-categorias"></tbody>
-      </table>
-    </div>
-  </section>
-</div>
-
-<div id="view-ubicaciones" class="view">
-  <section class="panel">
-    <div class="panel-head"><h2 class="panel-title">Ubicaciones</h2></div>
-    <form class="admin-form" id="form-ubicacion">
-      <div class="field grow"><label>Nombre de la ubicación</label><input type="text" id="ubi-name" placeholder="Ej: Bodega Municipal" required></div>
-      <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-    </form>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Ubicación</th><th style="width:100px;">Acciones</th></tr></thead>
-        <tbody id="tbody-ubicaciones"></tbody>
-      </table>
-    </div>
-  </section>
-</div>
-
-<div id="view-estados" class="view">
-  <section class="panel">
-    <div class="panel-head"><h2 class="panel-title">Estados de inventario</h2></div>
-    <form class="admin-form" id="form-estado">
-      <div class="field"><label>Nombre del estado</label><input type="text" id="estado-name" placeholder="Ej: En reparación" required></div>
-      <div class="field">
-        <label>Color de etiqueta</label>
-        <select id="estado-color">
-          <option value="teal">Verde (activo/ok)</option>
-          <option value="amber">Ámbar (pendiente)</option>
-          <option value="brick">Rojo (alerta/baja)</option>
-          <option value="slate">Gris (neutro)</option>
-        </select>
-      </div>
-      <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-    </form>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Estado</th><th>Vista previa</th><th style="width:100px;">Acciones</th></tr></thead>
-        <tbody id="tbody-estados"></tbody>
-      </table>
-    </div>
-  </section>
-</div>
-
-<div id="view-usuarios" class="view">
-  <section class="panel">
-    <div class="panel-head"><h2 class="panel-title">Usuarios</h2></div>
-    <p class="admin-note">Módulo preliminar: aún no hay autenticación ni permisos reales — solo guarda la lista en esta sesión, como base para conectar a un backend más adelante.</p>
-    <form class="admin-form" id="form-usuario">
-      <div class="field"><label>Nombre</label><input type="text" id="usr-nombre" required></div>
-      <div class="field"><label>Correo</label><input type="email" id="usr-correo" required></div>
-      <div class="field">
-        <label>Rol</label>
-        <select id="usr-rol">
-          <option value="Administrador">Administrador</option>
-          <option value="Editor">Editor</option>
-          <option value="Solo lectura">Solo lectura</option>
-        </select>
-      </div>
-      <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-    </form>
-    <div class="table-scroll">
-      <table>
-        <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th style="width:100px;">Acciones</th></tr></thead>
-        <tbody id="tbody-usuarios"></tbody>
-      </table>
-    </div>
-  </section>
-</div>
-
-<footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida para el sistema completo</footer>
 
 <div class="scrim" id="scrim"></div>
 <aside class="ficha" id="ficha" aria-hidden="true">

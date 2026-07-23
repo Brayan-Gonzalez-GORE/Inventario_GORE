@@ -537,8 +537,8 @@ document.getElementById('btn-export').addEventListener('click', function(){
 });
 /* ===== Sidebar ===== */
 document.getElementById('btn-open-sidebar').addEventListener('click', ()=>{
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebar-scrim').classList.add('open');
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-scrim').classList.toggle('open');
 });
 function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
