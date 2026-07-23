@@ -13,6 +13,86 @@ function catLabel(c){
   const found = adminData.categorias.find(x=>x.key===c);
   return found ? found.label : (CAT_LABELS[c] || c || "Sin categoría");
 }
+
+const ORGANIGRAMA = [
+  {
+    group: 'Gobernador Regional y Directos',
+    options: [
+      'Gobernador Regional',
+      'Secretaría Ejecutiva del Consejo Regional',
+      'Departamento de Gabinete y Comunicaciones',
+      'Unidad de Control'
+    ]
+  },
+  {
+    group: 'Administrador Regional y Directos',
+    options: [
+      'Administrador Regional',
+      'Departamento Jurídico',
+      'Unidad Provincial Osorno',
+      'Unidad Provincial Palena',
+      'Unidad Provincial Chiloé',
+      'Unidad de Gestión Estratégica y Mejora Continua'
+    ]
+  },
+  {
+    group: 'División Infraestructura y Transportes',
+    options: [
+      'División Infraestructura y Transportes',
+      'Departamento Infraestructura y Equipamiento Territorial',
+      'Departamento Gestión en Transporte y Telecomunicaciones'
+    ]
+  },
+  {
+    group: 'División Planificación y Desarrollo Regional',
+    options: [
+      'División Planificación y Desarrollo Regional',
+      'Departamento Planificación Estratégica y Políticas Públicas',
+      'Departamento de Sostenibilidad y Desarrollo Territorial',
+      'Departamento de Áreas Metropolitanas'
+    ]
+  },
+  {
+    group: 'División Fomento e Industria',
+    options: [
+      'División Fomento e Industria',
+      'Departamento Fomento Económico Local',
+      'Departamento de Innovación Regional',
+      'Departamento Empresarial y Promoción de Inversiones'
+    ]
+  },
+  {
+    group: 'División Desarrollo Social y Humano',
+    options: [
+      'División Desarrollo Social y Humano',
+      'Departamento Planes y Programas Sociales',
+      'Departamento Fondos Concursables y Participación Ciudadana'
+    ]
+  },
+  {
+    group: 'División Presupuesto e Inversión Regional',
+    options: [
+      'División Presupuesto e Inversión Regional',
+      'Departamento Inversión Complementaria',
+      'Unidad Fondo Comunidad',
+      'Unidad Administración de Programas',
+      'Departamento de Inversiones y Proyectos',
+      'Departamento Programación Presupuestaria'
+    ]
+  },
+  {
+    group: 'División Administración y Finanzas',
+    options: [
+      'División Administración y Finanzas',
+      'Departamento Finanzas y Presupuesto',
+      'Departamento Compras Públicas',
+      'Departamento Gestión y Desarrollo Personas',
+      'Unidad de Partes y Movilización',
+      'Departamento de Tecnologías Digitales e Innovación'
+    ]
+  }
+];
+
 /* ===== Datos administrativos (categorías, ubicaciones, estados, usuarios) ===== */
 let adminData = {
   categorias: [],
@@ -27,25 +107,36 @@ let adminData = {
 
 function mergeAdminDataFromData(){
   adminData.categorias = [];
-  adminData.ubicaciones = [];
+  adminData.ubicaciones = [...ORGANIGRAMA];
   adminData.estados = [
     {name:'Operativo', colorClass:'teal'},
     {name:'En Bodega', colorClass:'amber'},
     {name:'De Baja', colorClass:'brick'},
   ];
 
+  const flatOrganigrama = new Set();
+  ORGANIGRAMA.forEach(g => g.options.forEach(o => flatOrganigrama.add(o)));
+  const historico = new Set();
+
   workingData.forEach(r=>{
     if(r.cat && !adminData.categorias.some(c=>c.key===r.cat)){
       adminData.categorias.push({key:r.cat, label: CAT_LABELS[r.cat] || r.cat});
     }
-    if(r.ubicacion && !adminData.ubicaciones.some(u=>u.name===r.ubicacion)){
-      adminData.ubicaciones.push({name:r.ubicacion});
+    if(r.ubicacion && !flatOrganigrama.has(r.ubicacion)){
+      historico.add(r.ubicacion);
     }
     const n = normEstado(r.estado);
     if(n && !adminData.estados.some(e=>e.name===n)){
       adminData.estados.push({name:n, colorClass:'slate'});
     }
   });
+
+  if (historico.size > 0) {
+    adminData.ubicaciones.push({
+      group: 'Otras ubicaciones (Histórico)',
+      options: Array.from(historico)
+    });
+  }
 }
 function normEstado(e){
   if(!e) return null;
@@ -158,20 +249,33 @@ function applySort(){
 
 function populateSelect(id, values, formatter){
   const sel = document.getElementById(id);
+  if (!sel) return;
   const current = sel.value;
-  sel.innerHTML = sel.querySelector('option').outerHTML;
+  sel.innerHTML = sel.querySelector('option') ? sel.querySelector('option').outerHTML : '';
   values.forEach(v=>{
-    const opt = document.createElement('option');
-    opt.value = v;
-    opt.textContent = formatter ? formatter(v) : v;
-    sel.appendChild(opt);
+    if (v && typeof v === 'object' && v.group && v.options) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = v.group;
+      v.options.forEach(optVal => {
+        const opt = document.createElement('option');
+        opt.value = optVal;
+        opt.textContent = formatter ? formatter(optVal) : optVal;
+        optgroup.appendChild(opt);
+      });
+      sel.appendChild(optgroup);
+    } else {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = formatter ? formatter(v) : v;
+      sel.appendChild(opt);
+    }
   });
   sel.value = current;
 }
 
 function initFilterOptions(){
   populateSelect('f-cat', adminData.categorias.map(c=>c.key), catLabel);
-  populateSelect('f-ubicacion', adminData.ubicaciones.map(u=>u.name));
+  populateSelect('f-ubicacion', adminData.ubicaciones);
   populateSelect('f-estado', adminData.estados.map(e=>e.name));
 }
 
@@ -786,8 +890,26 @@ function populateSelects() {
     adminData.categorias.map(c => `<option value="${c.key}">${c.label}</option>`).join('');
   
   const ubiSelect = document.getElementById('crud-ubicacion');
-  if(ubiSelect) ubiSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-    adminData.ubicaciones.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+  if(ubiSelect) {
+    ubiSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+    adminData.ubicaciones.forEach(g => {
+      if (g && g.group && g.options) {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = g.group;
+        g.options.forEach(o => {
+          const opt = document.createElement('option');
+          opt.value = o; opt.textContent = o;
+          optgroup.appendChild(opt);
+        });
+        ubiSelect.appendChild(optgroup);
+      } else {
+        const opt = document.createElement('option');
+        const val = g.name || g;
+        opt.value = val; opt.textContent = val;
+        ubiSelect.appendChild(opt);
+      }
+    });
+  }
   
   const estSelect = document.getElementById('crud-estado');
   if(estSelect) estSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
