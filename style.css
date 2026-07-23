@@ -243,10 +243,14 @@ tbody td{
 tbody tr{ cursor:pointer; }
 tbody tr:hover{ background:var(--paper-alt); }
 td.mono{ font-family:var(--mono); font-size:12px; color:var(--ink-soft); }
-td.detalle{ max-width:280px; }
+td.detalle{ max-width:420px; }
 .detalle-txt{
-  display:block; overflow:hidden; text-overflow:ellipsis;
-  white-space:nowrap; max-width:280px;
+  display:block;
+  overflow:visible;
+  text-overflow:clip;
+  white-space:normal;
+  word-break:break-word;
+  max-width:420px;
 }
 .cat-tag{
   font-family:var(--mono); font-size:10.5px; letter-spacing:0.02em;

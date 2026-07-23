@@ -254,7 +254,7 @@ function renderBarChart(){
     const w = Math.max(2, (val/max)*chartW);
     const color = CHART_COLORS[i % CHART_COLORS.length];
     svgHtml += `
-      <text x="0" y="${y+barH/2+4}" font-family="IBM Plex Mono" font-size="12" fill="#4B5563">${catLabel(name).slice(0,26)}</text>
+      <text x="${barStartX - 10}" y="${y+barH/2+4}" text-anchor="end" font-family="IBM Plex Mono" font-size="12" fill="#4B5563">${catLabel(name)}</text>
       <rect x="${barStartX}" y="${y}" width="${chartW}" height="${barH}" fill="#EAE8E1"></rect>
       <rect x="${barStartX}" y="${y}" width="${w}" height="${barH}" fill="${color}"></rect>
       <text x="${barStartX+chartW+8}" y="${y+barH/2+4}" font-family="IBM Plex Mono" font-size="13" font-weight="600" fill="#1C2430">${moneyShort(val)}</text>
