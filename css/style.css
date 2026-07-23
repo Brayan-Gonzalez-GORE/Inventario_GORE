@@ -248,6 +248,40 @@ main,
 .link-reset{ background:none; border:none; color:var(--primary); font-family:var(--sans); font-size:12px; font-weight:600; cursor:pointer; padding:0; }
 .link-reset:hover{ text-decoration:underline; }
 
+/* ===== Advanced Filters ===== */
+.advanced-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 0;
+  padding-top: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease, padding 0.3s ease, margin 0.3s ease;
+}
+.advanced-filters.expanded {
+  max-height: 500px;
+  opacity: 1;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line-soft);
+}
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.toggle-btn .arrow-icon {
+  display: inline-block;
+  transition: transform 0.25s ease;
+  font-size: 8px;
+  margin-left: 2px;
+}
+.toggle-btn.active .arrow-icon {
+  transform: rotate(180deg);
+}
+
 /* ===== Table view ===== */
 .table-scroll{ overflow-x:auto; max-height:480px; overflow-y:auto; border-bottom:1px solid var(--line-soft); overscroll-behavior:contain; }
 table{ width:100%; border-collapse:collapse; font-size:12.5px; }

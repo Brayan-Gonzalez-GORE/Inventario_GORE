@@ -360,6 +360,10 @@ function initFilterOptions() {
   populateSelect('f-cat', adminData.categorias.map(c => c.key), catLabel);
   populateSelect('f-ubicacion', adminData.ubicaciones);
   populateSelect('f-estado', adminData.estados.map(e => e.name));
+  
+  // Rellenar dinámicamente el año de baja
+  const anios = [...new Set(workingData.map(r => r.anioBaja).filter(Boolean))].sort((a, b) => b - a);
+  populateSelect('f-anio-baja', anios);
 }
 
 function currentFilters() {
@@ -369,6 +373,16 @@ function currentFilters() {
     ubicacion: document.getElementById('f-ubicacion').value,
     estado: document.getElementById('f-estado').value,
     soloBaja: document.getElementById('f-baja').checked,
+    
+    // Filtros avanzados
+    recepcionInicio: document.getElementById('f-recepcion-inicio').value,
+    recepcionFin: document.getElementById('f-recepcion-fin').value,
+    compraMin: toNumOrNull(document.getElementById('f-compra-min').value),
+    compraMax: toNumOrNull(document.getElementById('f-compra-max').value),
+    factura: document.getElementById('f-factura').value.trim().toLowerCase(),
+    rut: document.getElementById('f-rut').value.trim().toLowerCase(),
+    responsable: document.getElementById('f-responsable').value.trim().toLowerCase(),
+    anioBaja: document.getElementById('f-anio-baja').value,
   };
 }
 
@@ -384,6 +398,19 @@ function applyFilters() {
         .filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(f.search)) return false;
     }
+    
+    // Filtros avanzados
+    if (f.recepcionInicio && (!r.fRecepcion || r.fRecepcion < f.recepcionInicio)) return false;
+    if (f.recepcionFin && (!r.fRecepcion || r.fRecepcion > f.recepcionFin)) return false;
+    
+    if (f.compraMin !== null && (r.valorCompra === null || r.valorCompra === undefined || r.valorCompra < f.compraMin)) return false;
+    if (f.compraMax !== null && (r.valorCompra === null || r.valorCompra === undefined || r.valorCompra > f.compraMax)) return false;
+    
+    if (f.factura && !String(r.factura || '').toLowerCase().includes(f.factura)) return false;
+    if (f.rut && !String(r.rut || '').toLowerCase().includes(f.rut)) return false;
+    if (f.responsable && !String(r.responsable || '').toLowerCase().includes(f.responsable)) return false;
+    if (f.anioBaja && String(r.anioBaja) !== f.anioBaja) return false;
+    
     return true;
   });
   applySort();
@@ -478,21 +505,55 @@ document.getElementById('page-prev').addEventListener('click', () => { currentPa
 document.getElementById('page-next').addEventListener('click', () => { currentPage++; renderTable(); });
 document.getElementById('page-last').addEventListener('click', () => { currentPage = Math.ceil(filtered.length / PAGE_SIZE); renderTable(); });
 
+// Alternar panel de filtros avanzados
+const btnToggle = document.getElementById('btn-toggle-advanced');
+const advancedPanel = document.getElementById('advanced-filters');
+if (btnToggle && advancedPanel) {
+  btnToggle.addEventListener('click', () => {
+    const isExpanded = advancedPanel.classList.toggle('expanded');
+    btnToggle.classList.toggle('active', isExpanded);
+  });
+}
+
 let searchTimer;
 document.getElementById('f-search').addEventListener('input', () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(applyFilters, 180);
 });
-['f-cat', 'f-ubicacion', 'f-estado'].forEach(id => {
-  document.getElementById(id).addEventListener('change', applyFilters);
+
+// Event listeners para cambios inmediatos (select y fecha)
+['f-cat', 'f-ubicacion', 'f-estado', 'f-recepcion-inicio', 'f-recepcion-fin', 'f-anio-baja'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', applyFilters);
 });
+
 document.getElementById('f-baja').addEventListener('change', applyFilters);
+
+// Event listeners para campos de texto/número con debounce
+let advancedTimer;
+['f-compra-min', 'f-compra-max', 'f-factura', 'f-rut', 'f-responsable'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', () => {
+    clearTimeout(advancedTimer);
+    advancedTimer = setTimeout(applyFilters, 180);
+  });
+});
+
 document.getElementById('btn-clear-filters').addEventListener('click', () => {
   document.getElementById('f-search').value = '';
   document.getElementById('f-cat').value = '';
   document.getElementById('f-ubicacion').value = '';
   document.getElementById('f-estado').value = '';
   document.getElementById('f-baja').checked = false;
+  
+  // Limpiar campos avanzados
+  document.getElementById('f-recepcion-inicio').value = '';
+  document.getElementById('f-recepcion-fin').value = '';
+  document.getElementById('f-compra-min').value = '';
+  document.getElementById('f-compra-max').value = '';
+  document.getElementById('f-factura').value = '';
+  document.getElementById('f-rut').value = '';
+  document.getElementById('f-responsable').value = '';
+  document.getElementById('f-anio-baja').value = '';
+  
   applyFilters();
 });
 

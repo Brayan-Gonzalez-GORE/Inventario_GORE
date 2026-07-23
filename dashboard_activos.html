@@ -120,9 +120,52 @@
                 <label for="f-baja">Solo dados de baja</label>
               </div>
             </div>
+
+            <div class="advanced-filters" id="advanced-filters">
+              <div class="field">
+                <label for="f-recepcion-inicio">F. Recepción Desde</label>
+                <input type="date" id="f-recepcion-inicio">
+              </div>
+              <div class="field">
+                <label for="f-recepcion-fin">F. Recepción Hasta</label>
+                <input type="date" id="f-recepcion-fin">
+              </div>
+              <div class="field">
+                <label for="f-compra-min">Valor Compra Mín ($)</label>
+                <input type="number" id="f-compra-min" placeholder="Mínimo">
+              </div>
+              <div class="field">
+                <label for="f-compra-max">Valor Compra Máx ($)</label>
+                <input type="number" id="f-compra-max" placeholder="Máximo">
+              </div>
+              <div class="field">
+                <label for="f-factura">N° Factura</label>
+                <input type="text" id="f-factura" placeholder="Ej: 641">
+              </div>
+              <div class="field">
+                <label for="f-rut">RUT Proveedor</label>
+                <input type="text" id="f-rut" placeholder="Ej: 76.158.484-7">
+              </div>
+              <div class="field">
+                <label for="f-responsable">Responsable</label>
+                <input type="text" id="f-responsable" placeholder="Nombre...">
+              </div>
+              <div class="field">
+                <label for="f-anio-baja">Año de baja</label>
+                <select id="f-anio-baja">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+
             <div class="filters-meta">
               <span id="filter-summary"></span>
-              <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
+              <div>
+                <button class="link-reset toggle-btn" id="btn-toggle-advanced" style="margin-right: 16px;">
+                  Filtros avanzados <span class="arrow-icon">▼</span>
+                </button>
+                <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
+              </div>
             </div>
           </div>
         </section>
