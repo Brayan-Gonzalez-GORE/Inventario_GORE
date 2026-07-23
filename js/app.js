@@ -63,7 +63,29 @@ function estadoBadgeClass(e){
 
 const CLP = new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP', maximumFractionDigits:0});
 const NUM = new Intl.NumberFormat('es-CL', {maximumFractionDigits:0});
-function money(v){ return (v===null||v===undefined||isNaN(v)) ? '—' : CLP.format(v); }
+
+function formatCurrency(v, currency) {
+  if (v===null||v===undefined||v===''||isNaN(v)) return '—';
+  if (!currency || currency === 'CLP') return CLP.format(v);
+  if (currency === 'DOLAR') return new Intl.NumberFormat('en-US', {style:'currency', currency:'USD'}).format(v);
+  if (currency === 'EURO') return new Intl.NumberFormat('de-DE', {style:'currency', currency:'EUR'}).format(v);
+  if (currency === 'UF') return NUM.format(v) + ' UF';
+  if (currency === 'UTM') return NUM.format(v) + ' UTM';
+  return NUM.format(v) + ' ' + currency;
+}
+
+function formatCL(v) {
+  if (v===null||v===undefined||v==='') return '';
+  const parts = String(v).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return parts.join(',');
+}
+function parseCL(str) {
+  if (!str) return 0;
+  return parseFloat(String(str).replace(/\./g, '').replace(/,/g, '.')) || 0;
+}
+
+function money(v, currency = 'CLP'){ return formatCurrency(v, currency); }
 function moneyShort(v){
   if(v===null||v===undefined||isNaN(v)) return '—';
   if(Math.abs(v) >= 1e9) return '$'+(v/1e9).toFixed(1)+'MM MM';
@@ -99,10 +121,10 @@ const COLUMNS = [
   {key:'id', label:'ID', num:true, w:'48px'},
   {key:'cat', label:'Categoría', render:r=>`<span class="cat-tag">${catLabel(r.cat)}</span>`},
   {key:'detalle', label:'Detalle', render:r=>`<span class="detalle-txt" title="${(r.detalle||'').replace(/"/g,'&quot;')}">${r.detalle||'—'}</span>`},
-  {key:'valorCompra', label:'Valor compra', num:true, render:r=>money(r.valorCompra)},
-  {key:'mesesVida', label:'Vida útil (m)', num:true},
-  {key:'depAnio2025', label:'Dep. 2025', num:true, render:r=>money(r.depAnio2025)},
-  {key:'valorLibro', label:'Valor libro', num:true, render:r=>money(r.valorLibro)},
+  {key:'valorCompra', label:'Valor Compra', num:true, render:r=>money(r.valorCompra, r.moneda)},
+  {key:'vidaTotal', label:'Vida Útil (m)', num:true, render:r=>r.mesesVida||'—'},
+  {key:'dep2025', label:'Dep. Acumulada', num:true, render:r=>money(r.dep2025, r.moneda)},
+  {key:'valorLibro', label:'Valor Libro', num:true, render:r=>`<strong>${money(r.valorLibro, r.moneda)}</strong>`},
   {key:'ubicacion', label:'Ubicación', render:r=>r.ubicacion||'—'},
   {key:'estado', label:'Estado', render:r=> r.anioBaja ? `<span class="badge badge-brick">De Baja</span>` : (r.estado ? `<span class="badge ${estadoBadgeClass(r.estado)}">${normEstado(r.estado)}</span>` : `<span class="badge badge-slate">Sin registrar</span>`)},
 ];
@@ -352,34 +374,6 @@ function openFicha(id){
   document.getElementById('ficha-id').textContent = String(r.id).padStart(4,'0');
   document.getElementById('ficha-titulo').textContent = r.detalle || 'Bien sin detalle';
 
-  const body = document.getElementById('ficha-body');
-  let html = '';
-
-  html += `<div class="ficha-qr">
-    <div class="ficha-qr-icon">QR</div>
-    <div>
-      <p class="ficha-qr-label">Código / N° de serie</p>
-      <p class="ficha-qr-code">${r.codigo || 'No registrado'}</p>
-    </div>
-  </div>`;
-
-  html += fichaSection('Identificación y compra', [
-    ['Categoría contable', catLabel(r.cat)],
-    ['Cuenta contable', r.cta],
-    ['Tipo de bien', r.tipoBien],
-    ['RUT proveedor', r.rut],
-    ['N° factura', r.factura],
-    ['Fecha factura', fmtDate(r.fFactura)],
-    ['N° egreso', r.egreso],
-    ['Fecha recepción', fmtDate(r.fRecepcion)],
-    ['Valor bien comprado', money(r.valorCompra)],
-    ['Meses vida útil', r.mesesVida],
-  ]);
-
-  html += fichaSection('Depreciación vigente', [
-    ['Vida útil restante (meses)', r.vidaActual],
-    ['Dep. acumulada 2024', money(r.dep2024)],
-    ['Dep. acumulada 2025', money(r.dep2025)],
     ['Dep. del año 2025', money(r.depAnio2025)],
     ['Valor libro actual', money(r.valorLibro)],
   ]);
@@ -794,17 +788,18 @@ function openCrudModal(id = null) {
       document.getElementById('crud-fFactura').value = r.fFactura || '';
       document.getElementById('crud-egreso').value = r.egreso || '';
       document.getElementById('crud-fRecepcion').value = r.fRecepcion || '';
-      document.getElementById('crud-valorCompra').value = r.valorCompra || '';
+      document.getElementById('crud-moneda').value = r.moneda || 'CLP';
+      document.getElementById('crud-valorCompra').value = formatCL(r.valorCompra);
       document.getElementById('crud-mesesVida').value = r.mesesVida || '';
       
       // Auto-calculate on edit open if values are missing, otherwise load saved
       if (!r.vidaActual && r.fRecepcion) calculateDepreciation();
       else {
         document.getElementById('crud-vidaActual').value = r.vidaActual || '';
-        document.getElementById('crud-dep2024').value = r.dep2024 || '';
-        document.getElementById('crud-dep2025').value = r.dep2025 || '';
-        document.getElementById('crud-depAnio2025').value = r.depAnio2025 || '';
-        document.getElementById('crud-valorLibro').value = r.valorLibro || '';
+        document.getElementById('crud-dep2024').value = formatCL(r.dep2024);
+        document.getElementById('crud-dep2025').value = formatCL(r.dep2025);
+        document.getElementById('crud-depAnio2025').value = formatCL(r.depAnio2025);
+        document.getElementById('crud-valorLibro').value = formatCL(r.valorLibro);
       }
       
       document.getElementById('crud-ubicacion').value = r.ubicacion || '';
@@ -816,8 +811,14 @@ function openCrudModal(id = null) {
   } else {
     document.getElementById('crud-modal-title').textContent = 'Nuevo Bien';
     document.getElementById('crud-id').value = '';
+    document.getElementById('crud-moneda').value = 'CLP';
     calculateDepreciation(); // Reset to 0s
   }
+  
+  const presentYear = new Date().getFullYear();
+  document.getElementById('lbl-dep-1').textContent = presentYear;
+  document.getElementById('lbl-dep-2').textContent = presentYear + 1;
+  document.getElementById('lbl-dep-3').textContent = presentYear + 1;
   
   if(modalScrim) modalScrim.classList.add('open');
   if(crudModal) crudModal.setAttribute('aria-hidden', 'false');
@@ -848,7 +849,10 @@ function getMonthsPassed(fRecepcion, targetDateStr) {
 }
 
 function calculateDepreciation() {
-  const valorCompra = parseFloat(document.getElementById('crud-valorCompra').value) || 0;
+  let valInput = document.getElementById('crud-valorCompra');
+  valInput.value = formatCL(parseCL(valInput.value)); // auto-format on typing
+  
+  const valorCompra = parseCL(valInput.value) || 0;
   const vidaTotal = parseFloat(document.getElementById('crud-mesesVida').value) || 0;
   const fRecepcion = document.getElementById('crud-fRecepcion').value;
   
@@ -861,8 +865,9 @@ function calculateDepreciation() {
     return;
   }
 
-  const passed2024 = getMonthsPassed(fRecepcion, '2024-12-31');
-  const passed2025 = getMonthsPassed(fRecepcion, '2025-12-31');
+  const presentYear = new Date().getFullYear();
+  const passed2024 = getMonthsPassed(fRecepcion, `${presentYear}-12-31`);
+  const passed2025 = getMonthsPassed(fRecepcion, `${presentYear+1}-12-31`);
   
   const vidaActual = Math.max(0, vidaTotal - passed2025);
   document.getElementById('crud-vidaActual').value = vidaActual;
@@ -872,21 +877,21 @@ function calculateDepreciation() {
     const used2024 = Math.min(vidaTotal, passed2024);
     dep2024 = Math.round((valorCompra / vidaTotal) * used2024);
   }
-  document.getElementById('crud-dep2024').value = dep2024;
+  document.getElementById('crud-dep2024').value = formatCL(dep2024);
   
   let dep2025 = 0;
   if (vidaTotal > 0) {
     const used2025 = Math.min(vidaTotal, passed2025);
     dep2025 = Math.round((valorCompra / vidaTotal) * used2025);
   }
-  document.getElementById('crud-dep2025').value = dep2025;
+  document.getElementById('crud-dep2025').value = formatCL(dep2025);
   
   const depAnio2025 = Math.max(0, dep2025 - dep2024);
-  document.getElementById('crud-depAnio2025').value = depAnio2025;
+  document.getElementById('crud-depAnio2025').value = formatCL(depAnio2025);
   
   let valorLibro = valorCompra - dep2025;
   if (valorLibro <= 0) valorLibro = 1;
-  document.getElementById('crud-valorLibro').value = valorLibro;
+  document.getElementById('crud-valorLibro').value = formatCL(valorLibro);
 }
 
 document.getElementById('crud-fRecepcion')?.addEventListener('change', calculateDepreciation);
@@ -941,14 +946,15 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
     fFactura: str(document.getElementById('crud-fFactura').value),
     egreso: str(document.getElementById('crud-egreso').value),
     fRecepcion: str(document.getElementById('crud-fRecepcion').value),
-    valorCompra: num(document.getElementById('crud-valorCompra').value),
+    valorCompra: parseCL(document.getElementById('crud-valorCompra').value),
+    moneda: str(document.getElementById('crud-moneda').value) || 'CLP',
     mesesVida: num(document.getElementById('crud-mesesVida').value),
     
     vidaActual: num(document.getElementById('crud-vidaActual').value),
-    dep2024: num(document.getElementById('crud-dep2024').value),
-    dep2025: num(document.getElementById('crud-dep2025').value),
-    depAnio2025: num(document.getElementById('crud-depAnio2025').value),
-    valorLibro: num(document.getElementById('crud-valorLibro').value),
+    dep2024: parseCL(document.getElementById('crud-dep2024').value),
+    dep2025: parseCL(document.getElementById('crud-dep2025').value),
+    depAnio2025: parseCL(document.getElementById('crud-depAnio2025').value),
+    valorLibro: parseCL(document.getElementById('crud-valorLibro').value),
     
     ubicacion: str(document.getElementById('crud-ubicacion').value),
     estado: str(document.getElementById('crud-estado').value),
@@ -997,8 +1003,8 @@ function openBajaModal(id) {
     document.getElementById('baja-anioBaja').value = r.anioBaja || new Date().getFullYear();
     document.getElementById('baja-resolucion').value = r.resolucion || '';
     document.getElementById('baja-vidaBaja').value = r.vidaActual || r.vidaBaja || '';
-    document.getElementById('baja-depBaja').value = r.depAnio2025 || r.depBaja || '';
-    document.getElementById('baja-valorBaja').value = r.valorLibro || r.valorBaja || '';
+    document.getElementById('baja-depBaja').value = formatCL(r.depAnio2025 || r.depBaja || '');
+    document.getElementById('baja-valorBaja').value = formatCL(r.valorLibro || r.valorBaja || '');
     document.getElementById('baja-obsBaja').value = r.obsBaja || '';
   }
   
@@ -1037,8 +1043,8 @@ document.getElementById('btn-save-baja')?.addEventListener('click', () => {
     workingData[idx].anioBaja = num(document.getElementById('baja-anioBaja').value);
     workingData[idx].resolucion = str(document.getElementById('baja-resolucion').value);
     workingData[idx].vidaBaja = num(document.getElementById('baja-vidaBaja').value);
-    workingData[idx].depBaja = num(document.getElementById('baja-depBaja').value);
-    workingData[idx].valorBaja = num(document.getElementById('baja-valorBaja').value);
+    workingData[idx].depBaja = parseCL(document.getElementById('baja-depBaja').value);
+    workingData[idx].valorBaja = parseCL(document.getElementById('baja-valorBaja').value);
     workingData[idx].obsBaja = str(document.getElementById('baja-obsBaja').value);
     
     // Auto-cambiar estado a De Baja
@@ -1049,5 +1055,14 @@ document.getElementById('btn-save-baja')?.addEventListener('click', () => {
     refreshAll();
     closeBajaModal();
     openFicha(currentFichaId); // reload ficha
+  }
+});
+
+['baja-depBaja', 'baja-valorBaja'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', function() {
+      this.value = formatCL(parseCL(this.value));
+    });
   }
 });
