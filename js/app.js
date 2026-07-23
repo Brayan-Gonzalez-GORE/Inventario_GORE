@@ -797,28 +797,26 @@ function openCrudModal(id = null) {
       document.getElementById('crud-valorCompra').value = r.valorCompra || '';
       document.getElementById('crud-mesesVida').value = r.mesesVida || '';
       
-      document.getElementById('crud-vidaActual').value = r.vidaActual || '';
-      document.getElementById('crud-dep2024').value = r.dep2024 || '';
-      document.getElementById('crud-dep2025').value = r.dep2025 || '';
-      document.getElementById('crud-depAnio2025').value = r.depAnio2025 || '';
-      document.getElementById('crud-valorLibro').value = r.valorLibro || '';
+      // Auto-calculate on edit open if values are missing, otherwise load saved
+      if (!r.vidaActual && r.fRecepcion) calculateDepreciation();
+      else {
+        document.getElementById('crud-vidaActual').value = r.vidaActual || '';
+        document.getElementById('crud-dep2024').value = r.dep2024 || '';
+        document.getElementById('crud-dep2025').value = r.dep2025 || '';
+        document.getElementById('crud-depAnio2025').value = r.depAnio2025 || '';
+        document.getElementById('crud-valorLibro').value = r.valorLibro || '';
+      }
       
       document.getElementById('crud-ubicacion').value = r.ubicacion || '';
       document.getElementById('crud-estado').value = r.estado ? normEstado(r.estado) : '';
       document.getElementById('crud-responsable').value = r.responsable || '';
       document.getElementById('crud-fRegistro').value = r.fRegistro || '';
       document.getElementById('crud-obsInv').value = r.obsInv || '';
-      
-      document.getElementById('crud-anioBaja').value = r.anioBaja || '';
-      document.getElementById('crud-resolucion').value = r.resolucion || '';
-      document.getElementById('crud-vidaBaja').value = r.vidaBaja || '';
-      document.getElementById('crud-depBaja').value = r.depBaja || '';
-      document.getElementById('crud-valorBaja').value = r.valorBaja || '';
-      document.getElementById('crud-obsBaja').value = r.obsBaja || '';
     }
   } else {
     document.getElementById('crud-modal-title').textContent = 'Nuevo Bien';
     document.getElementById('crud-id').value = '';
+    calculateDepreciation(); // Reset to 0s
   }
   
   if(modalScrim) modalScrim.classList.add('open');
@@ -831,6 +829,70 @@ function closeCrudModal() {
   if(crudModal) crudModal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
 }
+
+/* ===== Automatización de Depreciación ===== */
+function getMonthsPassed(fRecepcion, targetDateStr) {
+  const dJ = new Date(fRecepcion);
+  const dX = new Date(targetDateStr);
+  if (isNaN(dJ) || isNaN(dX)) return 0;
+  
+  const yearJ = dJ.getUTCFullYear();
+  const monthJ = dJ.getUTCMonth() + 1;
+  const yearX = dX.getUTCFullYear();
+  const monthX = dX.getUTCMonth() + 1;
+  
+  if (dJ > dX) return 0;
+  
+  const passed = ((yearX - yearJ) * 12) - (12 - monthX) + (12 - monthJ);
+  return Math.max(0, passed);
+}
+
+function calculateDepreciation() {
+  const valorCompra = parseFloat(document.getElementById('crud-valorCompra').value) || 0;
+  const vidaTotal = parseFloat(document.getElementById('crud-mesesVida').value) || 0;
+  const fRecepcion = document.getElementById('crud-fRecepcion').value;
+  
+  if (!valorCompra || !vidaTotal || !fRecepcion) {
+    document.getElementById('crud-vidaActual').value = '';
+    document.getElementById('crud-dep2024').value = '';
+    document.getElementById('crud-dep2025').value = '';
+    document.getElementById('crud-depAnio2025').value = '';
+    document.getElementById('crud-valorLibro').value = '';
+    return;
+  }
+
+  const passed2024 = getMonthsPassed(fRecepcion, '2024-12-31');
+  const passed2025 = getMonthsPassed(fRecepcion, '2025-12-31');
+  
+  const vidaActual = Math.max(0, vidaTotal - passed2025);
+  document.getElementById('crud-vidaActual').value = vidaActual;
+  
+  let dep2024 = 0;
+  if (vidaTotal > 0) {
+    const used2024 = Math.min(vidaTotal, passed2024);
+    dep2024 = Math.round((valorCompra / vidaTotal) * used2024);
+  }
+  document.getElementById('crud-dep2024').value = dep2024;
+  
+  let dep2025 = 0;
+  if (vidaTotal > 0) {
+    const used2025 = Math.min(vidaTotal, passed2025);
+    dep2025 = Math.round((valorCompra / vidaTotal) * used2025);
+  }
+  document.getElementById('crud-dep2025').value = dep2025;
+  
+  const depAnio2025 = Math.max(0, dep2025 - dep2024);
+  document.getElementById('crud-depAnio2025').value = depAnio2025;
+  
+  let valorLibro = valorCompra - dep2025;
+  if (valorLibro <= 0) valorLibro = 1;
+  document.getElementById('crud-valorLibro').value = valorLibro;
+}
+
+document.getElementById('crud-fRecepcion')?.addEventListener('change', calculateDepreciation);
+document.getElementById('crud-valorCompra')?.addEventListener('input', calculateDepreciation);
+document.getElementById('crud-mesesVida')?.addEventListener('input', calculateDepreciation);
+/* ========================================= */
 
 document.getElementById('btn-close-modal')?.addEventListener('click', closeCrudModal);
 document.getElementById('btn-cancel-modal')?.addEventListener('click', closeCrudModal);
@@ -892,21 +954,24 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
     estado: str(document.getElementById('crud-estado').value),
     responsable: str(document.getElementById('crud-responsable').value),
     fRegistro: str(document.getElementById('crud-fRegistro').value),
-    obsInv: str(document.getElementById('crud-obsInv').value),
-    
-    anioBaja: num(document.getElementById('crud-anioBaja').value),
-    resolucion: str(document.getElementById('crud-resolucion').value),
-    vidaBaja: num(document.getElementById('crud-vidaBaja').value),
-    depBaja: num(document.getElementById('crud-depBaja').value),
-    valorBaja: num(document.getElementById('crud-valorBaja').value),
-    obsBaja: str(document.getElementById('crud-obsBaja').value)
+    obsInv: str(document.getElementById('crud-obsInv').value)
   };
   
   if (isNew) {
     workingData.unshift(asset); // Add to beginning
   } else {
     const idx = workingData.findIndex(x => x.id === id);
-    if (idx !== -1) workingData[idx] = asset;
+    if (idx !== -1) {
+      // Retain baja info when editing normal info
+      const old = workingData[idx];
+      asset.anioBaja = old.anioBaja;
+      asset.resolucion = old.resolucion;
+      asset.vidaBaja = old.vidaBaja;
+      asset.depBaja = old.depBaja;
+      asset.valorBaja = old.valorBaja;
+      asset.obsBaja = old.obsBaja;
+      workingData[idx] = asset;
+    }
   }
   
   saveWorkingData();
@@ -915,5 +980,74 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
   closeCrudModal();
   if (!isNew) {
     openFicha(id);
+  }
+});
+
+/* ===== Baja Bienes (Modal) ===== */
+const bajaModalScrim = document.getElementById('baja-modal-scrim');
+const bajaModal = document.getElementById('baja-modal');
+const bajaForm = document.getElementById('baja-form');
+
+function openBajaModal(id) {
+  if (id === null) return;
+  bajaForm.reset();
+  
+  const r = workingData.find(x => x.id === id);
+  if(r) {
+    document.getElementById('baja-anioBaja').value = r.anioBaja || new Date().getFullYear();
+    document.getElementById('baja-resolucion').value = r.resolucion || '';
+    document.getElementById('baja-vidaBaja').value = r.vidaActual || r.vidaBaja || '';
+    document.getElementById('baja-depBaja').value = r.depAnio2025 || r.depBaja || '';
+    document.getElementById('baja-valorBaja').value = r.valorLibro || r.valorBaja || '';
+    document.getElementById('baja-obsBaja').value = r.obsBaja || '';
+  }
+  
+  if(bajaModalScrim) bajaModalScrim.classList.add('open');
+  if(bajaModal) bajaModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeBajaModal() {
+  if(bajaModalScrim) bajaModalScrim.classList.remove('open');
+  if(bajaModal) bajaModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-close-baja')?.addEventListener('click', closeBajaModal);
+document.getElementById('btn-cancel-baja')?.addEventListener('click', closeBajaModal);
+document.getElementById('baja-modal-scrim')?.addEventListener('click', closeBajaModal);
+
+document.getElementById('btn-baja-asset')?.addEventListener('click', () => {
+  if(currentFichaId !== null) openBajaModal(currentFichaId);
+});
+
+document.getElementById('btn-save-baja')?.addEventListener('click', () => {
+  if(!bajaForm.checkValidity()) {
+    bajaForm.reportValidity();
+    return;
+  }
+  
+  if (currentFichaId === null) return;
+  
+  const num = (v) => v ? Number(v) : null;
+  const str = (v) => v ? String(v).trim() : null;
+  
+  const idx = workingData.findIndex(x => x.id === currentFichaId);
+  if (idx !== -1) {
+    workingData[idx].anioBaja = num(document.getElementById('baja-anioBaja').value);
+    workingData[idx].resolucion = str(document.getElementById('baja-resolucion').value);
+    workingData[idx].vidaBaja = num(document.getElementById('baja-vidaBaja').value);
+    workingData[idx].depBaja = num(document.getElementById('baja-depBaja').value);
+    workingData[idx].valorBaja = num(document.getElementById('baja-valorBaja').value);
+    workingData[idx].obsBaja = str(document.getElementById('baja-obsBaja').value);
+    
+    // Auto-cambiar estado a De Baja
+    workingData[idx].estado = "De Baja";
+    
+    saveWorkingData();
+    mergeAdminDataFromData();
+    refreshAll();
+    closeBajaModal();
+    openFicha(currentFichaId); // reload ficha
   }
 });

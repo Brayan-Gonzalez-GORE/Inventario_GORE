@@ -255,6 +255,7 @@
     </div>
     <div style="display: flex; gap: 8px; align-items: flex-start;">
       <button class="btn btn-line btn-sm" id="btn-edit-asset" style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar ✏️</button>
+      <button class="btn btn-line btn-sm" id="btn-baja-asset" style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja ⛔</button>
       <button class="btn btn-line btn-sm" id="btn-delete-asset" style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar 🗑️</button>
       <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">✕</button>
     </div>
@@ -315,22 +316,39 @@
           </div>
         </div>
 
-        <div class="form-section" style="margin-top:24px;">
-          <h3>Baja del Bien</h3>
-          <div class="form-grid" style="grid-template-columns: repeat(3, 1fr);">
-            <div class="field"><label>Año de Baja</label><input type="number" id="crud-anioBaja"></div>
-            <div class="field"><label>Resolución</label><input type="text" id="crud-resolucion"></div>
-            <div class="field"><label>Vida Útil al momento de baja</label><input type="number" id="crud-vidaBaja"></div>
-            <div class="field"><label>Dep. Acum. a la baja</label><input type="number" id="crud-depBaja"></div>
-            <div class="field"><label>Valor a la baja</label><input type="number" id="crud-valorBaja"></div>
-            <div class="field"><label>Obs. Baja</label><input type="text" id="crud-obsBaja"></div>
-          </div>
-        </div>
+
       </form>
     </div>
     <div class="crud-modal-footer">
       <button type="button" class="btn btn-line" id="btn-cancel-modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="btn-save-modal">Guardar Bien</button>
+    </div>
+</div>
+
+<div class="crud-modal-scrim" id="baja-modal-scrim"></div>
+<div class="crud-modal" id="baja-modal" aria-hidden="true" style="max-width: 600px;">
+  <div class="crud-modal-header">
+    <h2 id="baja-modal-title">Dar de Baja Bien</h2>
+    <button class="crud-modal-close" id="btn-close-baja">✕</button>
+  </div>
+    <div class="crud-modal-body">
+      <form id="baja-form">
+        <div class="form-section">
+          <h3>Detalles de la Baja</h3>
+          <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap:24px;">
+            <div class="field"><label>Año de Baja</label><input type="number" id="baja-anioBaja" required></div>
+            <div class="field"><label>Resolución</label><input type="text" id="baja-resolucion" required></div>
+            <div class="field"><label>Vida Útil al momento de baja</label><input type="number" id="baja-vidaBaja"></div>
+            <div class="field"><label>Dep. Acum. a la baja</label><input type="number" id="baja-depBaja"></div>
+            <div class="field"><label>Valor a la baja</label><input type="number" id="baja-valorBaja"></div>
+            <div class="field"><label>Obs. Baja</label><input type="text" id="baja-obsBaja"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-baja">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-baja" style="background:var(--amber); border-color:var(--amber); color:white;">Procesar Baja</button>
     </div>
 </div>
 
