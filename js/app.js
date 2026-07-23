@@ -373,13 +373,39 @@ function openFicha(id){
   currentFichaId = id;
   document.getElementById('ficha-id').textContent = String(r.id).padStart(4,'0');
   document.getElementById('ficha-titulo').textContent = r.detalle || 'Bien sin detalle';
-  let html = fichaSection('Información del activo', [
-    ['Categoría', catLabel(r.cat)],
-    ['Valor Compra', money(r.valorCompra, r.moneda)],
-    ['Vida Útil (meses)', r.mesesVida],
-    ['Dep. Acumulada', money(r.dep2025, r.moneda)],
-    ['Dep. del año 2025', money(r.depAnio2025)],
-    ['Valor libro actual', money(r.valorLibro)],
+
+  const body = document.getElementById('ficha-body');
+  let html = '';
+
+  html += `<div class="ficha-qr">
+    <div class="ficha-qr-icon">QR</div>
+    <div>
+      <p class="ficha-qr-label">Código / N° de serie</p>
+      <p class="ficha-qr-code">${r.codigo || 'No registrado'}</p>
+    </div>
+  </div>`;
+
+  const presentYear = new Date().getFullYear();
+
+  html += fichaSection('Identificación y compra', [
+    ['Categoría contable', catLabel(r.cat)],
+    ['Cuenta contable', r.cta],
+    ['Tipo de bien', r.tipoBien],
+    ['RUT proveedor', r.rut],
+    ['N° factura', r.factura],
+    ['Fecha factura', fmtDate(r.fFactura)],
+    ['N° egreso', r.egreso],
+    ['Fecha recepción', fmtDate(r.fRecepcion)],
+    ['Valor bien comprado', money(r.valorCompra, r.moneda)],
+    ['Meses vida útil', r.mesesVida],
+  ]);
+
+  html += fichaSection('Depreciación (Automática)', [
+    ['Vida útil restante (meses)', r.vidaActual],
+    [`Dep. acumulada ${presentYear}`, money(r.dep2024, r.moneda)],
+    [`Dep. acumulada ${presentYear+1}`, money(r.dep2025, r.moneda)],
+    [`Dep. del año ${presentYear+1}`, money(r.depAnio2025, r.moneda)],
+    ['Valor libro actual', money(r.valorLibro, r.moneda)],
   ]);
 
   if(r.anioBaja){
@@ -387,8 +413,8 @@ function openFicha(id){
       ['Año de baja', r.anioBaja],
       ['Resolución', r.resolucion],
       ['Vida útil al momento de baja', r.vidaBaja],
-      ['Dep. acumulada a la baja', money(r.depBaja)],
-      ['Valor libro a la baja', money(r.valorBaja)],
+      ['Dep. acumulada a la baja', money(r.depBaja, r.moneda)],
+      ['Valor libro a la baja', money(r.valorBaja, r.moneda)],
     ]);
     if(r.obsBaja) html += `<div class="ficha-note">${r.obsBaja}</div>`;
   }
@@ -1070,3 +1096,15 @@ document.getElementById('btn-save-baja')?.addEventListener('click', () => {
     });
   }
 });
+
+// Inicialización de la aplicación
+function refreshAll(){
+  applyFilters();
+  renderKPIs();
+  renderBarChart();
+  renderDonut();
+}
+
+mergeAdminDataFromData();
+initFilterOptions();
+refreshAll();
