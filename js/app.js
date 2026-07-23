@@ -77,7 +77,18 @@ function fmtDate(v){
   return `${d}-${m}-${y}`;
 }
 
-let workingData = DATA.slice();
+let workingData = [];
+try {
+  const saved = localStorage.getItem('gore_bienes_data');
+  if (saved) workingData = JSON.parse(saved);
+  else workingData = DATA.slice();
+} catch(e) {
+  workingData = DATA.slice();
+}
+
+function saveWorkingData() {
+  localStorage.setItem('gore_bienes_data', JSON.stringify(workingData));
+}
 let filtered = workingData.slice();
 let currentPage = 1;
 const PAGE_SIZE = 40;
@@ -332,9 +343,12 @@ function renderDonut(){
 }
 
 /* ===== Ficha detalle ===== */
+let currentFichaId = null;
+
 function openFicha(id){
   const r = workingData.find(x=>x.id===id);
   if(!r) return;
+  currentFichaId = id;
   document.getElementById('ficha-id').textContent = String(r.id).padStart(4,'0');
   document.getElementById('ficha-titulo').textContent = r.detalle || 'Bien sin detalle';
 
@@ -394,6 +408,7 @@ function openFicha(id){
   document.getElementById('ficha').classList.add('open');
   document.getElementById('ficha').setAttribute('aria-hidden','false');
   document.getElementById('scrim').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 function fichaSection(title, rows){
   const rowsHtml = rows
@@ -403,9 +418,11 @@ function fichaSection(title, rows){
   return `<div class="ficha-section"><p class="ficha-section-title">${title}</p><div class="ficha-rows">${rowsHtml}</div></div>`;
 }
 function closeFicha(){
+  currentFichaId = null;
   document.getElementById('ficha').classList.remove('open');
   document.getElementById('ficha').setAttribute('aria-hidden','true');
   document.getElementById('scrim').classList.remove('open');
+  document.body.style.overflow = '';
 }
 document.getElementById('ficha-close').addEventListener('click', closeFicha);
 document.getElementById('scrim').addEventListener('click', closeFicha);
@@ -737,3 +754,166 @@ if (btnClearLogo) {
 
 // Inicializar logo
 loadLogo();
+
+/* ===== CRUD Bienes (Modal) ===== */
+function populateSelects() {
+  const catSelect = document.getElementById('crud-cat');
+  if(catSelect) catSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+    adminData.categorias.map(c => `<option value="${c.key}">${c.label}</option>`).join('');
+  
+  const ubiSelect = document.getElementById('crud-ubicacion');
+  if(ubiSelect) ubiSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+    adminData.ubicaciones.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+  
+  const estSelect = document.getElementById('crud-estado');
+  if(estSelect) estSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+    adminData.estados.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+}
+
+const modalScrim = document.getElementById('crud-modal-scrim');
+const crudModal = document.getElementById('crud-modal');
+const crudForm = document.getElementById('crud-form');
+
+function openCrudModal(id = null) {
+  populateSelects();
+  crudForm.reset();
+  
+  if (id !== null) {
+    document.getElementById('crud-modal-title').textContent = 'Editar Bien';
+    const r = workingData.find(x => x.id === id);
+    if(r) {
+      document.getElementById('crud-id').value = r.id;
+      document.getElementById('crud-cat').value = r.cat || '';
+      document.getElementById('crud-cta').value = r.cta || '';
+      document.getElementById('crud-detalle').value = r.detalle || '';
+      document.getElementById('crud-tipoBien').value = r.tipoBien || '';
+      document.getElementById('crud-codigo').value = r.codigo || '';
+      
+      document.getElementById('crud-rut').value = r.rut || '';
+      document.getElementById('crud-factura').value = r.factura || '';
+      document.getElementById('crud-fFactura').value = r.fFactura || '';
+      document.getElementById('crud-egreso').value = r.egreso || '';
+      document.getElementById('crud-fRecepcion').value = r.fRecepcion || '';
+      document.getElementById('crud-valorCompra').value = r.valorCompra || '';
+      document.getElementById('crud-mesesVida').value = r.mesesVida || '';
+      
+      document.getElementById('crud-vidaActual').value = r.vidaActual || '';
+      document.getElementById('crud-dep2024').value = r.dep2024 || '';
+      document.getElementById('crud-dep2025').value = r.dep2025 || '';
+      document.getElementById('crud-depAnio2025').value = r.depAnio2025 || '';
+      document.getElementById('crud-valorLibro').value = r.valorLibro || '';
+      
+      document.getElementById('crud-ubicacion').value = r.ubicacion || '';
+      document.getElementById('crud-estado').value = r.estado ? normEstado(r.estado) : '';
+      document.getElementById('crud-responsable').value = r.responsable || '';
+      document.getElementById('crud-fRegistro').value = r.fRegistro || '';
+      document.getElementById('crud-obsInv').value = r.obsInv || '';
+      
+      document.getElementById('crud-anioBaja').value = r.anioBaja || '';
+      document.getElementById('crud-resolucion').value = r.resolucion || '';
+      document.getElementById('crud-vidaBaja').value = r.vidaBaja || '';
+      document.getElementById('crud-depBaja').value = r.depBaja || '';
+      document.getElementById('crud-valorBaja').value = r.valorBaja || '';
+      document.getElementById('crud-obsBaja').value = r.obsBaja || '';
+    }
+  } else {
+    document.getElementById('crud-modal-title').textContent = 'Nuevo Bien';
+    document.getElementById('crud-id').value = '';
+  }
+  
+  if(modalScrim) modalScrim.classList.add('open');
+  if(crudModal) crudModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCrudModal() {
+  if(modalScrim) modalScrim.classList.remove('open');
+  if(crudModal) crudModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-close-modal')?.addEventListener('click', closeCrudModal);
+document.getElementById('btn-cancel-modal')?.addEventListener('click', closeCrudModal);
+document.getElementById('crud-modal-scrim')?.addEventListener('click', closeCrudModal);
+
+document.getElementById('btn-new-asset')?.addEventListener('click', () => {
+  openCrudModal(null);
+});
+
+document.getElementById('btn-edit-asset')?.addEventListener('click', () => {
+  if(currentFichaId !== null) openCrudModal(currentFichaId);
+});
+
+document.getElementById('btn-delete-asset')?.addEventListener('click', () => {
+  if(currentFichaId !== null && confirm('¿Estás seguro de eliminar este bien permanentemente?')) {
+    workingData = workingData.filter(x => x.id !== currentFichaId);
+    saveWorkingData();
+    refreshAll();
+    closeFicha();
+  }
+});
+
+document.getElementById('btn-save-modal')?.addEventListener('click', () => {
+  if(!crudForm.checkValidity()) {
+    crudForm.reportValidity();
+    return;
+  }
+  
+  const idVal = document.getElementById('crud-id').value;
+  const isNew = !idVal;
+  const id = isNew ? (workingData.length > 0 ? Math.max(...workingData.map(x=>x.id)) + 1 : 1) : parseInt(idVal);
+  
+  const num = (v) => v ? Number(v) : null;
+  const str = (v) => v ? String(v).trim() : null;
+  
+  const asset = {
+    id: id,
+    cat: str(document.getElementById('crud-cat').value),
+    cta: str(document.getElementById('crud-cta').value),
+    detalle: str(document.getElementById('crud-detalle').value),
+    tipoBien: str(document.getElementById('crud-tipoBien').value),
+    codigo: str(document.getElementById('crud-codigo').value),
+    
+    rut: str(document.getElementById('crud-rut').value),
+    factura: str(document.getElementById('crud-factura').value),
+    fFactura: str(document.getElementById('crud-fFactura').value),
+    egreso: str(document.getElementById('crud-egreso').value),
+    fRecepcion: str(document.getElementById('crud-fRecepcion').value),
+    valorCompra: num(document.getElementById('crud-valorCompra').value),
+    mesesVida: num(document.getElementById('crud-mesesVida').value),
+    
+    vidaActual: num(document.getElementById('crud-vidaActual').value),
+    dep2024: num(document.getElementById('crud-dep2024').value),
+    dep2025: num(document.getElementById('crud-dep2025').value),
+    depAnio2025: num(document.getElementById('crud-depAnio2025').value),
+    valorLibro: num(document.getElementById('crud-valorLibro').value),
+    
+    ubicacion: str(document.getElementById('crud-ubicacion').value),
+    estado: str(document.getElementById('crud-estado').value),
+    responsable: str(document.getElementById('crud-responsable').value),
+    fRegistro: str(document.getElementById('crud-fRegistro').value),
+    obsInv: str(document.getElementById('crud-obsInv').value),
+    
+    anioBaja: num(document.getElementById('crud-anioBaja').value),
+    resolucion: str(document.getElementById('crud-resolucion').value),
+    vidaBaja: num(document.getElementById('crud-vidaBaja').value),
+    depBaja: num(document.getElementById('crud-depBaja').value),
+    valorBaja: num(document.getElementById('crud-valorBaja').value),
+    obsBaja: str(document.getElementById('crud-obsBaja').value)
+  };
+  
+  if (isNew) {
+    workingData.unshift(asset); // Add to beginning
+  } else {
+    const idx = workingData.findIndex(x => x.id === id);
+    if (idx !== -1) workingData[idx] = asset;
+  }
+  
+  saveWorkingData();
+  mergeAdminDataFromData(); // Re-merge categories/states if new ones added
+  refreshAll();
+  closeCrudModal();
+  if (!isNew) {
+    openFicha(id);
+  }
+});
