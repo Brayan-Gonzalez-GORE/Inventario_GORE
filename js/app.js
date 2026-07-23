@@ -748,12 +748,19 @@ document.getElementById('form-categoria').addEventListener('submit', function(e)
 
 /* ===== CRUD: Ubicaciones ===== */
 function renderUbicaciones(){
-  document.getElementById('tbody-ubicaciones').innerHTML = adminData.ubicaciones.map((u,i)=>`
-    <tr>
-      <td>${u.name}</td>
-      <td><button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button></td>
-    </tr>
-  `).join('');
+  let html = '';
+  adminData.ubicaciones.forEach((g, i) => {
+    if (g && g.group && g.options) {
+      html += `<tr><td colspan="2" style="font-weight:600; font-size:11px; color:#64748b; background:#f8fafc; text-transform:uppercase; letter-spacing:0.05em; padding-top:16px;">${g.group}</td></tr>`;
+      g.options.forEach(o => {
+        html += `<tr><td style="padding-left:24px;">${o}</td><td><span style="color:#94a3b8; font-size:11px;">Fijo (Organigrama)</span></td></tr>`;
+      });
+    } else {
+      const name = g.name || g;
+      html += `<tr><td>${name}</td><td><button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button></td></tr>`;
+    }
+  });
+  document.getElementById('tbody-ubicaciones').innerHTML = html;
 }
 function eliminarUbicacion(i){
   const u = adminData.ubicaciones[i];
