@@ -600,7 +600,7 @@ footer{
   .view{ padding:20px 16px 48px; }
   
   /* Fix modal grid on smaller screens */
-  .form-grid{ grid-template-columns:1fr; }
+  .form-grid{ grid-template-columns:1fr !important; }
 }
 @media (max-width:640px){
   .kpi-grid{ grid-template-columns:repeat(2,1fr); }
