@@ -373,7 +373,11 @@ function openFicha(id){
   currentFichaId = id;
   document.getElementById('ficha-id').textContent = String(r.id).padStart(4,'0');
   document.getElementById('ficha-titulo').textContent = r.detalle || 'Bien sin detalle';
-
+  let html = fichaSection('Información del activo', [
+    ['Categoría', catLabel(r.cat)],
+    ['Valor Compra', money(r.valorCompra, r.moneda)],
+    ['Vida Útil (meses)', r.mesesVida],
+    ['Dep. Acumulada', money(r.dep2025, r.moneda)],
     ['Dep. del año 2025', money(r.depAnio2025)],
     ['Valor libro actual', money(r.valorLibro)],
   ]);
