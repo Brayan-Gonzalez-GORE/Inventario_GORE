@@ -536,13 +536,22 @@ document.getElementById('btn-export').addEventListener('click', function(){
   URL.revokeObjectURL(url);
 });
 /* ===== Sidebar ===== */
+const dashboardShell = document.querySelector('.dashboard-shell');
+const sidebar = document.getElementById('sidebar');
+const sidebarScrim = document.getElementById('sidebar-scrim');
+
 document.getElementById('btn-open-sidebar').addEventListener('click', ()=>{
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-scrim').classList.toggle('open');
+  if (window.innerWidth <= 900) {
+    sidebar.classList.toggle('open');
+    sidebarScrim.classList.toggle('open');
+  } else {
+    dashboardShell.classList.toggle('sidebar-open');
+  }
 });
 function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-scrim').classList.remove('open');
+  sidebar.classList.remove('open');
+  sidebarScrim.classList.remove('open');
+  dashboardShell.classList.remove('sidebar-open');
 }
 document.getElementById('sidebar-scrim').addEventListener('click', closeSidebar);
 
