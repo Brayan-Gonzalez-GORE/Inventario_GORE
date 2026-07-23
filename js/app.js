@@ -266,7 +266,7 @@ function renderKPIs(){
 }
 
 /* ===== Chart: bars por categoría ===== */
-const CHART_COLORS = ['#A8402A','#2C6459','#A8752A','#5B6472','#7C5A8C','#3D6E8C'];
+const CHART_COLORS = ['#0F3A66','#059669','#D97706','#64748B','#0369A1','#0F172A'];
 function renderBarChart(){
   const svg = document.getElementById('chart-bars');
   const byCat = {};
@@ -285,10 +285,10 @@ function renderBarChart(){
     const w = Math.max(2, (val/max)*chartW);
     const color = CHART_COLORS[i % CHART_COLORS.length];
     svgHtml += `
-      <text x="${barStartX - 10}" y="${y+barH/2+4}" text-anchor="end" font-family="IBM Plex Mono" font-size="12" fill="#4B5563">${catLabel(name)}</text>
-      <rect x="${barStartX}" y="${y}" width="${chartW}" height="${barH}" fill="#EAE8E1"></rect>
+      <text x="${barStartX - 10}" y="${y+barH/2+4}" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="12" fill="#4B5563">${catLabel(name)}</text>
+      <rect x="${barStartX}" y="${y}" width="${chartW}" height="${barH}" fill="#E2E8F0"></rect>
       <rect x="${barStartX}" y="${y}" width="${w}" height="${barH}" fill="${color}"></rect>
-      <text x="${barStartX+chartW+8}" y="${y+barH/2+4}" font-family="IBM Plex Mono" font-size="13" font-weight="600" fill="#1C2430">${moneyShort(val)}</text>
+      <text x="${barStartX+chartW+8}" y="${y+barH/2+4}" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600" fill="#0F172A">${moneyShort(val)}</text>
     `;
   }));
   svg.setAttribute('viewBox', `0 0 640 ${entries.length*(barH+gap)+16}`);
@@ -304,7 +304,7 @@ function renderDonut(){
     const key = r.estado ? normEstado(r.estado) : 'Sin registrar';
     counts[key] = (counts[key]||0)+1;
   });
-  const colorMap = {'Operativo':'#2C6459','En Bodega':'#A8752A','De Baja':'#A8402A','Sin registrar':'#C9C5B8'};
+  const colorMap = {'Operativo':'#059669','En Bodega':'#D97706','De Baja':'#DC2626','Sin registrar':'#CBD5E1'};
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const total = workingData.length;
   const cx=70, cy=70, r=58, rInner=34;
@@ -321,9 +321,9 @@ function renderDonut(){
     paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${color}"></path>`;
     angle += sweep;
   });
-  svg.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="${rInner}" fill="#FCFBF8"></circle>
-    <text x="${cx}" y="${cy-3}" text-anchor="middle" font-family="IBM Plex Serif" font-size="18" font-weight="500" fill="#1C2430">${total}</text>
-    <text x="${cx}" y="${cy+13}" text-anchor="middle" font-family="IBM Plex Mono" font-size="9" fill="#5B6472">BIENES</text>`;
+  svg.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="${rInner}" fill="#FFFFFF"></circle>
+    <text x="${cx}" y="${cy-3}" text-anchor="middle" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="#0F172A">${total}</text>
+    <text x="${cx}" y="${cy+13}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#64748B">BIENES</text>`;
   legend.innerHTML = entries.map(([name,val])=>`
     <li><span class="legend-swatch" style="background:${colorMap[name]||'#5B6472'}"></span>
     <span class="legend-name">${name}</span>
@@ -683,3 +683,52 @@ document.getElementById('form-usuario').addEventListener('submit', function(e){
   renderUsuarios();
 });
 refreshAll();
+
+/* ===== Personalización (Logo) ===== */
+const logoInput = document.getElementById('logo-upload');
+const btnSaveLogo = document.getElementById('btn-save-logo');
+const btnClearLogo = document.getElementById('btn-clear-logo');
+const sidebarLogo = document.getElementById('sidebar-logo');
+const sidebarLogoContainer = document.getElementById('sidebar-logo-container');
+
+function loadLogo() {
+  const savedLogo = localStorage.getItem('gore_logo');
+  if (savedLogo) {
+    sidebarLogo.src = savedLogo;
+    sidebarLogoContainer.style.display = 'block';
+  } else {
+    sidebarLogoContainer.style.display = 'none';
+    sidebarLogo.src = '';
+  }
+}
+
+if (btnSaveLogo) {
+  btnSaveLogo.addEventListener('click', () => {
+    const file = logoInput.files[0];
+    if (!file) {
+      alert('Por favor selecciona una imagen primero.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      localStorage.setItem('gore_logo', dataUrl);
+      loadLogo();
+      alert('Logo guardado exitosamente.');
+      logoInput.value = '';
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+if (btnClearLogo) {
+  btnClearLogo.addEventListener('click', () => {
+    if(confirm('¿Estás seguro de eliminar el logo?')) {
+      localStorage.removeItem('gore_logo');
+      loadLogo();
+    }
+  });
+}
+
+// Inicializar logo
+loadLogo();

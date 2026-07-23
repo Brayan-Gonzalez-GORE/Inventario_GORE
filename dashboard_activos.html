@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Activos Fijos — Depreciación e Inventario</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -15,8 +15,11 @@
 <div class="dashboard-shell">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-head">
+      <div id="sidebar-logo-container" style="display:none; margin-bottom: 16px;">
+        <img id="sidebar-logo" src="" alt="Logo de la Institución" style="max-width: 100%; max-height: 64px; object-fit: contain;">
+      </div>
       <p>Panel administrativo</p>
-      <h3>Configuración del sistema</h3>
+      <h3>Sistema de Activos Fijos</h3>
     </div>
     <nav class="sidebar-nav">
       <a class="sidebar-link active" data-view="dashboard"><span class="ico">01</span><span class="label">Dashboard</span></a>
@@ -24,6 +27,8 @@
       <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span><span class="label">Ubicaciones</span></a>
       <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de inventario</span></a>
       <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
+      <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0;"></div>
+      <a class="sidebar-link" data-view="personalizacion"><span class="ico">⚙️</span><span class="label">Personalización</span></a>
     </nav>
   </aside>
 
@@ -219,6 +224,23 @@
       </section>
     </div>
 
+    <div id="view-personalizacion" class="view">
+      <section class="panel">
+        <div class="panel-head"><h2 class="panel-title">Personalización del Sistema</h2></div>
+        <div class="panel-body">
+          <p class="admin-note" style="margin-top:0; padding:0 0 16px;">Sube el logo de tu institución. Este se guardará temporalmente en tu navegador hasta que se implemente una base de datos central.</p>
+          <div class="field">
+            <label for="logo-upload">Logo de la institución (PNG/JPG)</label>
+            <input type="file" id="logo-upload" accept="image/png, image/jpeg" style="max-width: 400px; padding: 10px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper-alt);">
+          </div>
+          <div style="margin-top: 16px; display:flex; gap:10px;">
+             <button class="btn btn-primary" id="btn-save-logo">Guardar Logo</button>
+             <button class="btn btn-line" id="btn-clear-logo">Eliminar Logo</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida para el sistema completo</footer>
   </div>
 </div>
@@ -235,7 +257,7 @@
   <div class="ficha-scroll" id="ficha-body"></div>
 </aside>
 
-<script src="data.js"></script>
-<script src="app.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
