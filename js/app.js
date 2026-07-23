@@ -130,14 +130,18 @@ function mergeAdminDataFromData(){
       {name:'De Baja', colorClass:'brick'},
     ];
   }
+  
+  migrateDivisiones();
 
   const allUbis = new Set();
-  adminData.ubicaciones.forEach(g => {
-    if (g.group && g.options) {
-      g.options.forEach(o => allUbis.add(o));
-    } else {
-      allUbis.add(g.name || g);
-    }
+  adminData.divisiones.forEach(div => {
+    div.unidades.forEach(uni => {
+      const prefix = `${div.nombre} - ${uni.nombre}`;
+      allUbis.add(prefix);
+      uni.dependencias.forEach(dep => {
+        allUbis.add(`${prefix} - ${dep.nombre}`);
+      });
+    });
   });
 
   const historico = new Set();
@@ -871,290 +875,357 @@ function renderDatalistDetalles() {
   }
 }
 
-/* ===== CRUD: Ubicaciones ===== */
-function renderUbicaciones(){
+/* ===== CRUD: Ubicaciones (Jerárquico) ===== */
+function renderUbicaciones() {
   saveAdminData();
-  renderDatalistDetalles();
+  const tbody = document.getElementById('tbody-ubicaciones');
   let html = '';
-  adminData.ubicaciones.forEach((g, i) => {
-    if (g && g.group && g.options) {
-      html += `<tr><td colspan="2" style="font-weight:600; font-size:11px; color:#64748b; background:#f8fafc; text-transform:uppercase; letter-spacing:0.05em; padding-top:16px;">${g.group}</td></tr>`;
-      
-      let deptos = [];
-      let subOffices = [];
-      g.options.forEach((o, oIdx) => {
-        if (typeof o === 'string' && o.startsWith(g.group + " - ")) {
-          subOffices.push({name: o, oIdx: oIdx, rendered: false});
-        } else {
-          deptos.push({name: o, oIdx: oIdx});
-        }
-      });
-      
-      deptos.forEach(d => {
-        html += `<tr>
-          <td style="padding-left:24px; font-weight:500;">${d.name}</td>
-          <td style="white-space:nowrap; text-align:right;">
-            <button class="btn btn-line btn-sm" onclick="editarUbicacionGrupo(${i}, ${d.oIdx})">Editar</button>
-            <button class="btn btn-line btn-sm" onclick="eliminarUbicacionGrupo(${i}, ${d.oIdx})">Eliminar</button>
-          </td>
-        </tr>`;
-        
-        const deptoPrefix = `${g.group} - ${d.name} - `;
-        subOffices.forEach(sub => {
-          if (sub.name.startsWith(deptoPrefix)) {
-            const detailName = sub.name.substring(deptoPrefix.length);
-            html += `<tr>
-              <td style="padding-left:48px; color:#64748b; font-size:13px;">↳ ${detailName}</td>
-              <td style="white-space:nowrap; text-align:right;">
-                <button class="btn btn-line btn-sm" onclick="editarUbicacionGrupo(${i}, ${sub.oIdx})">Editar</button>
-                <button class="btn btn-line btn-sm" onclick="eliminarUbicacionGrupo(${i}, ${sub.oIdx})">Eliminar</button>
-              </td>
-            </tr>`;
-            sub.rendered = true;
-          }
-        });
-      });
-      
-      subOffices.forEach(sub => {
-        if (!sub.rendered) {
-          html += `<tr>
-            <td style="padding-left:48px; color:#eab308; font-size:13px;">↳ ${sub.name}</td>
-            <td style="white-space:nowrap; text-align:right;">
-              <button class="btn btn-line btn-sm" onclick="editarUbicacionGrupo(${i}, ${sub.oIdx})">Editar</button>
-              <button class="btn btn-line btn-sm" onclick="eliminarUbicacionGrupo(${i}, ${sub.oIdx})">Eliminar</button>
-            </td>
-          </tr>`;
-        }
-      });
-    } else {
-      const name = g.name || g;
+  
+  if (!adminData.divisiones || adminData.divisiones.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 24px; color:#94a3b8;">No hay ubicaciones registradas</td></tr>';
+    return;
+  }
+
+  adminData.divisiones.forEach(div => {
+    // Fila de División
+    const dirStr = div.direccion ? `📍 ${div.direccion}` : '';
+    const edfStr = div.edificio ? `🏢 ${div.edificio}` : '';
+    let meta = '';
+    if (dirStr || edfStr) {
+      meta = `<div style="font-size:11px; color:#94a3b8; margin-top:4px;">${dirStr} ${edfStr}</div>`;
+    }
+    
+    html += `<tr>
+      <td style="font-weight:600; font-size:14px; padding: 12px 16px;">
+        ${div.nombre}
+        ${meta}
+      </td>
+      <td style="white-space:nowrap; text-align:right;">
+        <button class="btn btn-line btn-sm" onclick="abrirTreeModal('editar', 'division', '${div.id}')">Editar</button>
+        <button class="btn btn-line btn-sm" onclick="eliminarTree('division', '${div.id}')">Eliminar</button>
+      </td>
+    </tr>`;
+
+    // Unidades
+    div.unidades.forEach(uni => {
       html += `<tr>
-        <td>${name}</td>
+        <td style="padding-left: 32px; font-weight:500; font-size:13px; color:#475569; border-left: 2px solid #e2e8f0;">
+          📁 ${uni.nombre}
+        </td>
         <td style="white-space:nowrap; text-align:right;">
-          <button class="btn btn-line btn-sm" onclick="editarUbicacion(${i})">Editar</button>
-          <button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button>
+          <button class="btn btn-line btn-sm" onclick="abrirTreeModal('editar', 'unidad', '${uni.id}')">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarTree('unidad', '${uni.id}')">Eliminar</button>
         </td>
       </tr>`;
-    }
-  });
-  document.getElementById('tbody-ubicaciones').innerHTML = html;
 
-  const divSelect = document.getElementById('ubi-division');
-  if (divSelect && divSelect.options.length <= 1) {
-    divSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-      ORGANIGRAMA.map((g, idx) => `<option value="${idx}">${g.group}</option>`).join('');
-  }
+      // Dependencias
+      uni.dependencias.forEach(dep => {
+        html += `<tr>
+          <td style="padding-left: 56px; font-size:13px; color:#64748b; border-left: 2px solid #e2e8f0;">
+            ↳ ${dep.nombre}
+          </td>
+          <td style="white-space:nowrap; text-align:right;">
+            <button class="btn btn-line btn-sm" onclick="abrirTreeModal('editar', 'dependencia', '${dep.id}')">Editar</button>
+            <button class="btn btn-line btn-sm" onclick="eliminarTree('dependencia', '${dep.id}')">Eliminar</button>
+          </td>
+        </tr>`;
+      });
+    });
+  });
+
+  tbody.innerHTML = html;
+  initFilterOptions();
 }
 
-document.getElementById('ubi-division').addEventListener('change', function(){
-  const deptoSelect = document.getElementById('ubi-depto');
-  const idx = this.value;
-  if (!idx) {
-    deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
-    deptoSelect.disabled = true;
-    return;
-  }
-  const group = ORGANIGRAMA[idx];
-  deptoSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-    group.options.map(o => `<option value="${o}">${o}</option>`).join('');
-  deptoSelect.disabled = false;
+/* Lógica del Modal del Árbol (Tree Modal) */
+const treeModal = document.getElementById('tree-modal');
+const treeScrim = document.getElementById('tree-modal-scrim');
+const treeTipoSelect = document.getElementById('tree-tipo');
+
+document.getElementById('btn-add-ubicacion')?.addEventListener('click', () => {
+  abrirTreeModal('crear', 'division');
 });
 
-function actualizarBienesUbicacion(oldName, newName) {
-  let changed = false;
-  workingData.forEach(r => {
-    if (r.ubicacion === oldName) {
-      r.ubicacion = newName;
-      changed = true;
-    }
-  });
-  if (changed) renderTable();
-}
+treeTipoSelect.addEventListener('change', function() {
+  actualizarCamposTreeModal(this.value);
+});
 
-window.abrirModalEdicionUbicacion = function(oldName, gIdx, oIdx) {
-  const modal = document.getElementById('edit-ubi-modal');
-  const scrim = document.getElementById('edit-ubi-modal-scrim');
+function actualizarCamposTreeModal(tipo) {
+  const fDiv = document.getElementById('tree-field-division');
+  const fUni = document.getElementById('tree-field-unidad');
+  const fDir = document.getElementById('tree-field-direccion');
+  const fEdf = document.getElementById('tree-field-edificio');
+  const lblNombre = document.getElementById('tree-lbl-nombre');
   
-  document.getElementById('edit-ubi-oldname').value = oldName;
-  document.getElementById('edit-ubi-gidx').value = gIdx !== undefined ? gIdx : '';
-  document.getElementById('edit-ubi-oidx').value = oIdx !== undefined ? oIdx : '';
+  fDiv.style.display = 'none';
+  fUni.style.display = 'none';
+  fDir.style.display = 'none';
+  fEdf.style.display = 'none';
   
-  const divSelect = document.getElementById('edit-ubi-division');
-  divSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-    ORGANIGRAMA.map((g, idx) => `<option value="${idx}">${g.group}</option>`).join('');
-  
-  const deptoSelect = document.getElementById('edit-ubi-depto');
-  deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
-  deptoSelect.disabled = true;
-  
-  let prefillName = oldName;
-  const parts = oldName.split(' - ');
-  if (parts.length >= 3) {
-    const divName = parts[0].trim();
-    const deptoName = parts[1].trim();
-    const detailName = parts.slice(2).join(' - ').trim();
+  // Poblar divisiones
+  const selDiv = document.getElementById('tree-sel-division');
+  selDiv.innerHTML = '<option value="">-- Seleccione División --</option>' + 
+    adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
     
-    const dIdx = ORGANIGRAMA.findIndex(g => g.group === divName);
-    if (dIdx !== -1) {
-      divSelect.value = dIdx;
-      const group = ORGANIGRAMA[dIdx];
-      deptoSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-        group.options.map(o => `<option value="${o}">${o}</option>`).join('');
-      deptoSelect.disabled = false;
-      deptoSelect.value = deptoName;
-      prefillName = detailName;
-    }
-  }
-  
-  document.getElementById('edit-ubi-name').value = prefillName;
-  
-  modal.setAttribute('aria-hidden', 'false');
-  scrim.style.display = 'block';
-};
-
-window.cerrarModalEdicionUbicacion = function() {
-  document.getElementById('edit-ubi-modal').setAttribute('aria-hidden', 'true');
-  document.getElementById('edit-ubi-modal-scrim').style.display = 'none';
-};
-
-document.getElementById('btn-close-edit-ubi').addEventListener('click', cerrarModalEdicionUbicacion);
-document.getElementById('btn-cancel-edit-ubi').addEventListener('click', cerrarModalEdicionUbicacion);
-document.getElementById('edit-ubi-modal-scrim').addEventListener('click', cerrarModalEdicionUbicacion);
-
-document.getElementById('edit-ubi-division').addEventListener('change', function(){
-  const deptoSelect = document.getElementById('edit-ubi-depto');
-  const idx = this.value;
-  if (!idx) {
-    deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
-    deptoSelect.disabled = true;
-    return;
-  }
-  const group = ORGANIGRAMA[idx];
-  deptoSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
-    group.options.map(o => `<option value="${o}">${o}</option>`).join('');
-  deptoSelect.disabled = false;
-});
-
-document.getElementById('btn-save-edit-ubi').addEventListener('click', function() {
-  const divIdx = document.getElementById('edit-ubi-division').value;
-  const depto = document.getElementById('edit-ubi-depto').value;
-  const detail = document.getElementById('edit-ubi-name').value.trim();
-  
-  if (!divIdx || !depto || !detail) {
-    alert('Debe completar todos los campos');
-    return;
-  }
-  
-  const division = ORGANIGRAMA[divIdx].group;
-  const newName = `${division} - ${depto} - ${detail}`;
-  const oldName = document.getElementById('edit-ubi-oldname').value;
-  
-  if (oldName === newName) {
-    cerrarModalEdicionUbicacion();
-    return;
-  }
-  
-  let exists = false;
-  adminData.ubicaciones.forEach((g) => {
-    if (g.group && g.options) {
-      if (g.options.includes(newName)) exists = true;
-    } else {
-      if ((g.name || g) === newName) exists = true;
-    }
-  });
-  if (exists) {
-    alert('Esa ubicación ya existe.');
-    return;
-  }
-  
-  const gIdxStr = document.getElementById('edit-ubi-gidx').value;
-  const oIdxStr = document.getElementById('edit-ubi-oidx').value;
-  
-  if (gIdxStr !== '' && oIdxStr !== '') {
-    const gIdx = parseInt(gIdxStr);
-    const oIdx = parseInt(oIdxStr);
-    adminData.ubicaciones[gIdx].options.splice(oIdx, 1);
-  } else {
-    const flatIndex = adminData.ubicaciones.findIndex(g => (g.name || g) === oldName && (!g.group));
-    if (flatIndex !== -1) {
-      adminData.ubicaciones.splice(flatIndex, 1);
-    }
-  }
-  
-  let targetGroup = adminData.ubicaciones.find(g => g.group === division);
-  if (!targetGroup) {
-    targetGroup = { group: division, options: [] };
-    adminData.ubicaciones.push(targetGroup);
-  }
-  targetGroup.options.push(newName);
-  
-  actualizarBienesUbicacion(oldName, newName);
-  renderUbicaciones();
-  initFilterOptions();
-  cerrarModalEdicionUbicacion();
-});
-
-window.editarUbicacionGrupo = function(gIdx, oIdx) {
-  const group = adminData.ubicaciones[gIdx];
-  const oldName = group.options[oIdx];
-  abrirModalEdicionUbicacion(oldName, gIdx, oIdx);
-};
-
-window.eliminarUbicacionGrupo = function(gIdx, oIdx) {
-  const group = adminData.ubicaciones[gIdx];
-  const u = group.options[oIdx];
-  if(workingData.some(r=>r.ubicacion===u)){
-    alert('No se puede eliminar: hay bienes registrados en esta ubicación.');
-    return;
-  }
-  if (confirm(`¿Está seguro de eliminar la ubicación "${u}"?`)) {
-    group.options.splice(oIdx, 1);
-    renderUbicaciones();
-    initFilterOptions();
-  }
-};
-
-window.editarUbicacion = function(i) {
-  const u = adminData.ubicaciones[i];
-  const oldName = u.name || u;
-  abrirModalEdicionUbicacion(oldName);
-};
-
-function eliminarUbicacion(i){
-  const u = adminData.ubicaciones[i];
-  const name = u.name || u;
-  if(workingData.some(r=>r.ubicacion===name)){
-    alert('No se puede eliminar: hay bienes registrados en esta ubicación.');
-    return;
-  }
-  if (confirm(`¿Está seguro de eliminar la ubicación "${name}"?`)) {
-    adminData.ubicaciones.splice(i,1);
-    renderUbicaciones();
-    initFilterOptions();
+  if (tipo === 'division') {
+    fDir.style.display = 'block';
+    fEdf.style.display = 'block';
+    lblNombre.textContent = 'Nombre de División / Repartición';
+  } else if (tipo === 'unidad') {
+    fDiv.style.display = 'block';
+    lblNombre.textContent = 'Nombre de Departamento / Unidad';
+  } else if (tipo === 'dependencia') {
+    fDiv.style.display = 'block';
+    fUni.style.display = 'block';
+    lblNombre.textContent = 'Nombre de Dependencia (Oficina, etc)';
+    
+    // Auto-update units when division changes
+    selDiv.onchange = function() {
+      const d = adminData.divisiones.find(x => x.id === this.value);
+      const selUni = document.getElementById('tree-sel-unidad');
+      if (d) {
+        selUni.innerHTML = '<option value="">-- Seleccione Unidad --</option>' + 
+          d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+      } else {
+        selUni.innerHTML = '<option value="">-- Seleccione División primero --</option>';
+      }
+    };
+    selDiv.onchange(); // trigger initial
   }
 }
-document.getElementById('form-ubicacion').addEventListener('submit', function(e){
-  e.preventDefault();
-  const divIdx = document.getElementById('ubi-division').value;
-  const depto = document.getElementById('ubi-depto').value;
-  const detail = document.getElementById('ubi-name').value.trim();
+
+window.abrirTreeModal = function(action, tipo, id = null) {
+  document.getElementById('tree-action').value = action; // 'crear' o 'editar'
+  document.getElementById('tree-target-id').value = id || '';
   
-  if (!divIdx || !depto || !detail) return;
-  const division = ORGANIGRAMA[divIdx].group;
+  document.getElementById('tree-modal-title').textContent = action === 'crear' ? 'Nueva Ubicación' : 'Editar Ubicación';
+  treeTipoSelect.value = tipo;
+  treeTipoSelect.disabled = action === 'editar'; // No cambiar tipo al editar
   
-  const name = `${division} - ${depto} - ${detail}`;
+  actualizarCamposTreeModal(tipo);
   
-  if(adminData.ubicaciones.some(u=>u.name===name)){ alert('Esa ubicación ya existe.'); return; }
-  adminData.ubicaciones.push({name});
-  this.reset();
+  document.getElementById('tree-nombre').value = '';
+  document.getElementById('tree-direccion').value = '';
+  document.getElementById('tree-edificio').value = '';
   
-  const deptoSelect = document.getElementById('ubi-depto');
-  deptoSelect.innerHTML = '<option value="">-- Seleccione División primero --</option>';
-  deptoSelect.disabled = true;
+  if (action === 'editar' && id) {
+    if (tipo === 'division') {
+      const d = adminData.divisiones.find(x => x.id === id);
+      if (d) {
+        document.getElementById('tree-nombre').value = d.nombre || '';
+        document.getElementById('tree-direccion').value = d.direccion || '';
+        document.getElementById('tree-edificio').value = d.edificio || '';
+      }
+    } else if (tipo === 'unidad') {
+      let u = null, dPadre = null;
+      adminData.divisiones.forEach(d => d.unidades.forEach(x => { if(x.id === id) { u = x; dPadre = d; } }));
+      if (u && dPadre) {
+        document.getElementById('tree-sel-division').value = dPadre.id;
+        document.getElementById('tree-nombre').value = u.nombre || '';
+      }
+    } else if (tipo === 'dependencia') {
+      let dep = null, uPadre = null, dPadre = null;
+      adminData.divisiones.forEach(d => d.unidades.forEach(u => u.dependencias.forEach(x => { 
+        if(x.id === id) { dep = x; uPadre = u; dPadre = d; } 
+      })));
+      if (dep && uPadre && dPadre) {
+        document.getElementById('tree-sel-division').value = dPadre.id;
+        document.getElementById('tree-sel-division').onchange(); // poblar unidades
+        document.getElementById('tree-sel-unidad').value = uPadre.id;
+        document.getElementById('tree-nombre').value = dep.nombre || '';
+      }
+    }
+  }
+
+  treeModal.setAttribute('aria-hidden', 'false');
+  treeScrim.style.display = 'block';
+};
+
+function cerrarTreeModal() {
+  treeModal.setAttribute('aria-hidden', 'true');
+  treeScrim.style.display = 'none';
+}
+
+document.getElementById('btn-close-tree').addEventListener('click', cerrarTreeModal);
+document.getElementById('btn-cancel-tree').addEventListener('click', cerrarTreeModal);
+treeScrim.addEventListener('click', cerrarTreeModal);
+
+document.getElementById('btn-save-tree').addEventListener('click', () => {
+  const action = document.getElementById('tree-action').value;
+  const id = document.getElementById('tree-target-id').value;
+  const tipo = treeTipoSelect.value;
   
+  const nombre = document.getElementById('tree-nombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio'); return; }
+  
+  if (tipo === 'division') {
+    const direccion = document.getElementById('tree-direccion').value.trim();
+    const edificio = document.getElementById('tree-edificio').value.trim();
+    
+    if (action === 'crear') {
+      adminData.divisiones.push({
+        id: 'div-' + Date.now(),
+        nombre, direccion, edificio, unidades: []
+      });
+    } else {
+      const d = adminData.divisiones.find(x => x.id === id);
+      if (d) {
+        renombrarActivosGlobal('division', d, {nombre});
+        d.nombre = nombre;
+        d.direccion = direccion;
+        d.edificio = edificio;
+      }
+    }
+  } else if (tipo === 'unidad') {
+    const divId = document.getElementById('tree-sel-division').value;
+    if (!divId) { alert('Debe seleccionar la división padre'); return; }
+    
+    if (action === 'crear') {
+      const d = adminData.divisiones.find(x => x.id === divId);
+      if(d) d.unidades.push({ id: 'uni-' + Date.now(), nombre, dependencias: [] });
+    } else {
+      let u = null, dAntiguo = null;
+      adminData.divisiones.forEach(d => d.unidades.forEach(x => { if(x.id === id) { u = x; dAntiguo = d; } }));
+      if (u && dAntiguo) {
+        renombrarActivosGlobal('unidad', u, {nombre, newDivId: divId, oldDivId: dAntiguo.id});
+        u.nombre = nombre;
+        if (dAntiguo.id !== divId) {
+          // Mover de división
+          dAntiguo.unidades = dAntiguo.unidades.filter(x => x.id !== id);
+          const dNuevo = adminData.divisiones.find(x => x.id === divId);
+          if (dNuevo) dNuevo.unidades.push(u);
+        }
+      }
+    }
+  } else if (tipo === 'dependencia') {
+    const divId = document.getElementById('tree-sel-division').value;
+    const uniId = document.getElementById('tree-sel-unidad').value;
+    if (!divId || !uniId) { alert('Debe seleccionar la división y unidad'); return; }
+    
+    if (action === 'crear') {
+      const d = adminData.divisiones.find(x => x.id === divId);
+      const u = d ? d.unidades.find(x => x.id === uniId) : null;
+      if (u) u.dependencias.push({ id: 'dep-' + Date.now(), nombre });
+    } else {
+      let dep = null, uAntiguo = null, dAntiguo = null;
+      adminData.divisiones.forEach(d => d.unidades.forEach(u => u.dependencias.forEach(x => { 
+        if(x.id === id) { dep = x; uAntiguo = u; dAntiguo = d; } 
+      })));
+      if (dep && uAntiguo && dAntiguo) {
+        renombrarActivosGlobal('dependencia', dep, {nombre, newUniId: uniId, oldUniId: uAntiguo.id, dAntiguo: dAntiguo.id, dNuevo: divId});
+        dep.nombre = nombre;
+        if (uAntiguo.id !== uniId) {
+          uAntiguo.dependencias = uAntiguo.dependencias.filter(x => x.id !== id);
+          const dNuevo = adminData.divisiones.find(x => x.id === divId);
+          const uNuevo = dNuevo ? dNuevo.unidades.find(x => x.id === uniId) : null;
+          if (uNuevo) uNuevo.dependencias.push(dep);
+        }
+      }
+    }
+  }
+  
+  cerrarTreeModal();
   renderUbicaciones();
   initFilterOptions();
 });
+
+window.eliminarTree = function(tipo, id) {
+  if (!confirm(`¿Estás seguro de eliminar esta ${tipo}?`)) return;
+  
+  // Validar si tiene bienes
+  const enUso = workingData.some(r => {
+     if (!r.ubicacion) return false;
+     const p = r.ubicacion.split(' - ');
+     if (tipo === 'division' && p[0]) {
+        const d = adminData.divisiones.find(x => x.id === id);
+        return d && p[0].trim() === d.nombre;
+     }
+     if (tipo === 'unidad' && p[1]) {
+        let u = null;
+        adminData.divisiones.forEach(div => div.unidades.forEach(x => { if(x.id === id) u = x; }));
+        return u && p[1].trim() === u.nombre;
+     }
+     if (tipo === 'dependencia' && p[2]) {
+        let dep = null;
+        adminData.divisiones.forEach(div => div.unidades.forEach(uni => uni.dependencias.forEach(x => { if(x.id === id) dep = x; })));
+        return dep && p[2].trim() === dep.nombre;
+     }
+     return false;
+  });
+  
+  if (enUso) {
+    alert(`No se puede eliminar la ${tipo} porque hay bienes registrados en ella o en sus subniveles.`);
+    return;
+  }
+  
+  if (tipo === 'division') {
+    adminData.divisiones = adminData.divisiones.filter(x => x.id !== id);
+  } else if (tipo === 'unidad') {
+    adminData.divisiones.forEach(d => {
+      d.unidades = d.unidades.filter(x => x.id !== id);
+    });
+  } else if (tipo === 'dependencia') {
+    adminData.divisiones.forEach(d => {
+      d.unidades.forEach(u => {
+        u.dependencias = u.dependencias.filter(x => x.id !== id);
+      });
+    });
+  }
+  renderUbicaciones();
+  initFilterOptions();
+};
+
+function renombrarActivosGlobal(tipo, objAntiguo, nuevosDatos) {
+  // Cuando se renombra un nivel, hay que actualizar el string plano en workingData
+  if (tipo === 'division') {
+    const oldName = objAntiguo.nombre;
+    const newName = nuevosDatos.nombre;
+    if (oldName === newName) return;
+    workingData.forEach(r => {
+      if (r.ubicacion && r.ubicacion.startsWith(oldName + " - ")) {
+        r.ubicacion = r.ubicacion.replace(oldName + " - ", newName + " - ");
+      } else if (r.ubicacion === oldName) {
+        r.ubicacion = newName;
+      }
+    });
+  } else if (tipo === 'unidad') {
+    const oldName = objAntiguo.nombre;
+    const newName = nuevosDatos.nombre;
+    const dAntiguo = adminData.divisiones.find(d => d.id === nuevosDatos.oldDivId);
+    const dNuevo = adminData.divisiones.find(d => d.id === nuevosDatos.newDivId);
+    if (!dAntiguo || !dNuevo) return;
+    
+    const oldPrefix = `${dAntiguo.nombre} - ${oldName}`;
+    const newPrefix = `${dNuevo.nombre} - ${newName}`;
+    
+    workingData.forEach(r => {
+      if (r.ubicacion && r.ubicacion.startsWith(oldPrefix + " - ")) {
+        r.ubicacion = r.ubicacion.replace(oldPrefix + " - ", newPrefix + " - ");
+      } else if (r.ubicacion === oldPrefix) {
+        r.ubicacion = newPrefix;
+      }
+    });
+  } else if (tipo === 'dependencia') {
+    const oldName = objAntiguo.nombre;
+    const newName = nuevosDatos.nombre;
+    const dAntiguoObj = adminData.divisiones.find(d => d.id === nuevosDatos.dAntiguo);
+    const dNuevoObj = adminData.divisiones.find(d => d.id === nuevosDatos.dNuevo);
+    const uAntiguoObj = dAntiguoObj ? dAntiguoObj.unidades.find(u => u.id === nuevosDatos.oldUniId) : null;
+    const uNuevoObj = dNuevoObj ? dNuevoObj.unidades.find(u => u.id === nuevosDatos.newUniId) : null;
+    
+    if (!dAntiguoObj || !dNuevoObj || !uAntiguoObj || !uNuevoObj) return;
+    
+    const oldPrefix = `${dAntiguoObj.nombre} - ${uAntiguoObj.nombre} - ${oldName}`;
+    const newPrefix = `${dNuevoObj.nombre} - ${uNuevoObj.nombre} - ${newName}`;
+    
+    workingData.forEach(r => {
+      if (r.ubicacion === oldPrefix) {
+        r.ubicacion = newPrefix;
+      }
+    });
+  }
+  saveWorkingData();
+}
 
 /* ===== CRUD: Estados ===== */
 function renderEstados(){
@@ -1272,31 +1343,107 @@ function populateSelects() {
   if(catSelect) catSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
     adminData.categorias.map(c => `<option value="${c.key}">${c.label}</option>`).join('');
   
-  const ubiSelect = document.getElementById('crud-ubicacion');
-  if(ubiSelect) {
-    ubiSelect.innerHTML = '<option value="">-- Seleccione --</option>';
-    adminData.ubicaciones.forEach(g => {
-      if (g && g.group && g.options) {
-        const optgroup = document.createElement('optgroup');
-        optgroup.label = g.group;
-        g.options.forEach(o => {
-          const opt = document.createElement('option');
-          opt.value = o; opt.textContent = o;
-          optgroup.appendChild(opt);
-        });
-        ubiSelect.appendChild(optgroup);
+  const divSelect = document.getElementById('crud-ubi-division');
+  const uniSelect = document.getElementById('crud-ubi-unidad');
+  const depSelect = document.getElementById('crud-ubi-dependencia');
+  
+  if (divSelect) {
+    divSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+      adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+    
+    divSelect.onchange = function() {
+      const d = adminData.divisiones.find(x => x.id === this.value);
+      if (d) {
+        uniSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
+          d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+        uniSelect.disabled = false;
       } else {
-        const opt = document.createElement('option');
-        const val = g.name || g;
-        opt.value = val; opt.textContent = val;
-        ubiSelect.appendChild(opt);
+        uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+        uniSelect.disabled = true;
       }
-    });
+      depSelect.innerHTML = '<option value="">-- Opcional --</option>';
+      depSelect.disabled = true;
+      actualizarUbicacionOculta();
+    };
+    
+    uniSelect.onchange = function() {
+      const d = adminData.divisiones.find(x => x.id === divSelect.value);
+      const u = d ? d.unidades.find(x => x.id === this.value) : null;
+      if (u && u.dependencias.length > 0) {
+        depSelect.innerHTML = '<option value="">-- Seleccione / Ninguna --</option>' + 
+          u.dependencias.map(dep => `<option value="${dep.id}">${dep.nombre}</option>`).join('');
+        depSelect.disabled = false;
+      } else {
+        depSelect.innerHTML = '<option value="">-- Sin dependencias --</option>';
+        depSelect.disabled = true;
+      }
+      actualizarUbicacionOculta();
+    };
+    
+    depSelect.onchange = actualizarUbicacionOculta;
   }
   
   const estSelect = document.getElementById('crud-estado');
   if(estSelect) estSelect.innerHTML = '<option value="">-- Seleccione --</option>' + 
     adminData.estados.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+}
+
+function actualizarUbicacionOculta() {
+  const divId = document.getElementById('crud-ubi-division').value;
+  const uniId = document.getElementById('crud-ubi-unidad').value;
+  const depId = document.getElementById('crud-ubi-dependencia').value;
+  
+  let ubiStr = '';
+  if (divId && uniId) {
+    const d = adminData.divisiones.find(x => x.id === divId);
+    const u = d ? d.unidades.find(x => x.id === uniId) : null;
+    const dep = u && depId ? u.dependencias.find(x => x.id === depId) : null;
+    
+    if (d && u) {
+      ubiStr = `${d.nombre} - ${u.nombre}`;
+      if (dep) ubiStr += ` - ${dep.nombre}`;
+    }
+  }
+  document.getElementById('crud-ubicacion').value = ubiStr;
+}
+
+function loadAssetUbicacionToDropdowns(ubiStr) {
+  const divSelect = document.getElementById('crud-ubi-division');
+  const uniSelect = document.getElementById('crud-ubi-unidad');
+  const depSelect = document.getElementById('crud-ubi-dependencia');
+  
+  if (!ubiStr) {
+    divSelect.value = '';
+    if(divSelect.onchange) divSelect.onchange();
+    return;
+  }
+  
+  const parts = ubiStr.split(' - ');
+  if (parts.length >= 2) {
+    const divName = parts[0].trim();
+    const uniName = parts[1].trim();
+    const depName = parts.slice(2).join(' - ').trim();
+    
+    const d = adminData.divisiones.find(x => x.nombre === divName);
+    if (d) {
+      divSelect.value = d.id;
+      if(divSelect.onchange) divSelect.onchange(); // poblar unidades
+      
+      const u = d.unidades.find(x => x.nombre === uniName);
+      if (u) {
+        uniSelect.value = u.id;
+        if(uniSelect.onchange) uniSelect.onchange(); // poblar dependencias
+        
+        if (depName) {
+          const dep = u.dependencias.find(x => x.nombre === depName);
+          if (dep) {
+            depSelect.value = dep.id;
+          }
+        }
+      }
+    }
+  }
+  document.getElementById('crud-ubicacion').value = ubiStr;
 }
 
 const modalScrim = document.getElementById('crud-modal-scrim');
@@ -1337,7 +1484,7 @@ function openCrudModal(id = null) {
         document.getElementById('crud-valorLibro').value = formatCL(r.valorLibro);
       }
       
-      document.getElementById('crud-ubicacion').value = r.ubicacion || '';
+      loadAssetUbicacionToDropdowns(r.ubicacion || '');
       document.getElementById('crud-estado').value = r.estado ? normEstado(r.estado) : '';
       document.getElementById('crud-responsable').value = r.responsable || '';
       document.getElementById('crud-fRegistro').value = r.fRegistro || '';
@@ -1347,6 +1494,7 @@ function openCrudModal(id = null) {
     document.getElementById('crud-modal-title').textContent = 'Nuevo Bien';
     document.getElementById('crud-id').value = '';
     document.getElementById('crud-moneda').value = 'CLP';
+    loadAssetUbicacionToDropdowns('');
     calculateDepreciation(); // Reset to 0s
   }
   
@@ -1585,13 +1733,121 @@ document.getElementById('btn-save-baja')?.addEventListener('click', () => {
     // Auto-cambiar estado a De Baja
     workingData[idx].estado = "De Baja";
     
-    saveWorkingData();
-    mergeAdminDataFromData();
     refreshAll();
     closeBajaModal();
-    openFicha(currentFichaId); // reload ficha
   }
 });
+
+function mergeWorkingDataLocationsToDivisiones() {
+  workingData.forEach(r => {
+    if (r.ubicacion) {
+      const parts = r.ubicacion.split(' - ');
+      if (parts.length >= 2) {
+        const divName = parts[0].trim();
+        const uniName = parts[1].trim();
+        const depName = parts.slice(2).join(' - ').trim();
+        
+        let div = adminData.divisiones.find(d => d.nombre === divName);
+        if (!div) {
+          div = { id: 'div-'+Date.now()+'-'+Math.floor(Math.random()*1000), nombre: divName, direccion: '', edificio: '', unidades: [] };
+          adminData.divisiones.push(div);
+        }
+        
+        let uni = div.unidades.find(u => u.nombre === uniName);
+        if (!uni) {
+          uni = { id: 'uni-'+Date.now()+'-'+Math.floor(Math.random()*1000), nombre: uniName, dependencias: [] };
+          div.unidades.push(uni);
+        }
+        
+        if (depName) {
+          let dep = uni.dependencias.find(d => d.nombre === depName);
+          if (!dep) {
+            uni.dependencias.push({ id: 'dep-'+Date.now()+'-'+Math.floor(Math.random()*1000), nombre: depName });
+          }
+        }
+      }
+    }
+  });
+  saveAdminData();
+}
+
+function migrateDivisiones() {
+  if (adminData.divisiones && adminData.divisiones.length > 0) return;
+  
+  adminData.divisiones = [];
+  
+  ORGANIGRAMA.forEach((org, divIdx) => {
+    let div = {
+      id: 'div-' + Date.now() + '-' + divIdx,
+      nombre: org.group,
+      direccion: '',
+      edificio: '',
+      unidades: []
+    };
+    org.options.forEach((deptoName, uniIdx) => {
+      div.unidades.push({
+        id: 'uni-' + Date.now() + '-' + divIdx + '-' + uniIdx,
+        nombre: deptoName,
+        dependencias: []
+      });
+    });
+    adminData.divisiones.push(div);
+  });
+  
+  if (adminData.ubicaciones) {
+     adminData.ubicaciones.forEach(oldGrp => {
+        if (oldGrp.group) {
+           const div = adminData.divisiones.find(d => d.nombre === oldGrp.group);
+           if (div) {
+              oldGrp.options.forEach(opt => {
+                 const prefix = div.nombre + " - ";
+                 if (opt.startsWith(prefix)) {
+                    const withoutDiv = opt.substring(prefix.length);
+                    let matchedUnit = null;
+                    div.unidades.forEach(u => {
+                        if (withoutDiv.startsWith(u.nombre)) {
+                            if (!matchedUnit || u.nombre.length > matchedUnit.nombre.length) {
+                                matchedUnit = u;
+                            }
+                        }
+                    });
+                    
+                    if (matchedUnit) {
+                       const remaining = withoutDiv.substring(matchedUnit.nombre.length).trim();
+                       let addressPart = "";
+                       let depPart = remaining;
+                       if (remaining.startsWith("(")) {
+                         const closingParen = remaining.indexOf(")");
+                         if (closingParen !== -1) {
+                           addressPart = remaining.substring(1, closingParen).trim();
+                           depPart = remaining.substring(closingParen + 1).trim();
+                         }
+                       }
+                       if (depPart.startsWith("-")) {
+                         depPart = depPart.substring(1).trim();
+                       }
+                       
+                       if (addressPart && !div.direccion) {
+                           div.direccion = addressPart; 
+                       }
+                       
+                       if (depPart && depPart !== "") {
+                           if (!matchedUnit.dependencias.find(d => d.nombre === depPart)) {
+                               matchedUnit.dependencias.push({
+                                   id: 'dep-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+                                   nombre: depPart
+                               });
+                           }
+                       }
+                    }
+                 }
+              });
+           }
+        }
+     });
+  }
+  saveAdminData();
+}
 
 ['baja-depBaja', 'baja-valorBaja'].forEach(id => {
   const el = document.getElementById(id);

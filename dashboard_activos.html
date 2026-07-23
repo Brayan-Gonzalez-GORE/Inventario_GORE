@@ -1,291 +1,336 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Activos Fijos — Depreciación e Inventario</title>
-<link rel="stylesheet" href="css/style.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-</head>
-<body>
-<div class="sidebar-scrim" id="sidebar-scrim"></div>
-<div class="dashboard-shell">
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-head">
-      <div id="sidebar-logo-container" style="display:none; margin-bottom: 16px;">
-        <img id="sidebar-logo" src="" alt="Logo de la Institución" style="max-width: 100%; max-height: 64px; object-fit: contain;">
-      </div>
-      <p>Panel administrativo</p>
-      <h3>Sistema de Activos Fijos</h3>
-    </div>
-    <nav class="sidebar-nav">
-      <a class="sidebar-link active" data-view="dashboard"><span class="ico">01</span><span class="label">Dashboard</span></a>
-      <a class="sidebar-link" data-view="categorias"><span class="ico">02</span><span class="label">Categorías contables</span></a>
-      <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span><span class="label">Ubicaciones</span></a>
-      <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de inventario</span></a>
-      <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
-      <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0;"></div>
-      <a class="sidebar-link" data-view="personalizacion"><span class="ico">⚙️</span><span class="label">Personalización</span></a>
-    </nav>
-  </aside>
 
-  <div class="app-area">
-    <div class="topbar">
-      <div class="topbar-inner">
-        <div style="display:flex; align-items:flex-end; gap:10px;">
-          <button class="sidebar-toggle" id="btn-open-sidebar" aria-label="Abrir menú">☰</button>
-          <div>
-            <p class="brand-eyebrow">Ficha N° 01 — Dirección de Administración y Finanzas</p>
-            <h1 class="brand-title">Control de Activos Fijos <em>&amp; Depreciación</em></h1>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Activos Fijos — Depreciación e Inventario</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+  <div class="sidebar-scrim" id="sidebar-scrim"></div>
+  <div class="dashboard-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div id="sidebar-logo-container" style="display:none; margin-bottom: 16px;">
+          <img id="sidebar-logo" src="" alt="Logo de la Institución"
+            style="max-width: 100%; max-height: 64px; object-fit: contain;">
+        </div>
+        <p>Panel administrativo</p>
+        <h3>Sistema de Activos Fijos</h3>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="sidebar-link active" data-view="dashboard"><span class="ico">01</span><span
+            class="label">Dashboard</span></a>
+        <a class="sidebar-link" data-view="categorias"><span class="ico">02</span><span class="label">Categorías
+            contables</span></a>
+        <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span><span
+            class="label">Ubicaciones</span></a>
+        <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de
+            inventario</span></a>
+        <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span><span class="label">Usuarios</span></a>
+        <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0;"></div>
+        <a class="sidebar-link" data-view="personalizacion"><span class="ico">⚙️</span><span
+            class="label">Personalización</span></a>
+      </nav>
+    </aside>
+
+    <div class="app-area">
+      <div class="topbar">
+        <div class="topbar-inner">
+          <div style="display:flex; align-items:flex-end; gap:10px;">
+            <button class="sidebar-toggle" id="btn-open-sidebar" aria-label="Abrir menú">☰</button>
+            <div>
+              <p class="brand-eyebrow">Ficha N° 01 — Dirección de Administración y Finanzas</p>
+              <h1 class="brand-title">Control de Activos Fijos <em>&amp; Depreciación</em></h1>
+            </div>
+          </div>
+
+          <div class="topbar-actions">
+            <button class="btn btn-ghost btn-sm" id="btn-restore" title="Volver a los datos originales cargados">↺
+              Restaurar datos</button>
+            <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
+            <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+            <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar filtrado (CSV)</button>
           </div>
         </div>
-
-        <div class="topbar-actions">
-          <button class="btn btn-ghost btn-sm" id="btn-restore" title="Volver a los datos originales cargados">↺ Restaurar datos</button>
-          <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
-          <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
-          <button class="btn btn-primary btn-sm" id="btn-export">⇩ Exportar filtrado (CSV)</button>
-        </div>
       </div>
-    </div>
 
-    <main id="view-dashboard" class="view active">
-      <section class="kpi-grid" id="kpi-grid" aria-label="Indicadores generales"></section>
-      <section class="charts-row">
-        <div class="panel">
+      <main id="view-dashboard" class="view active">
+        <section class="kpi-grid" id="kpi-grid" aria-label="Indicadores generales"></section>
+        <section class="charts-row">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
+            </div>
+            <div class="panel-body">
+              <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220"
+                preserveAspectRatio="xMinYMin meet"></svg>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
+            </div>
+            <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
+              <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
+              <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
           <div class="panel-head">
-            <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
+            <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
+            <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
           </div>
           <div class="panel-body">
-            <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220" preserveAspectRatio="xMinYMin meet"></svg>
+            <div class="filters">
+              <div class="field grow">
+                <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
+                <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
+              </div>
+              <div class="field">
+                <label for="f-cat">Categoría contable</label>
+                <select id="f-cat">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-ubicacion">Ubicación</label>
+                <select id="f-ubicacion">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-estado">Estado inventario</label>
+                <select id="f-estado">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="checkfield">
+                <input type="checkbox" id="f-baja">
+                <label for="f-baja">Solo dados de baja</label>
+              </div>
+            </div>
+            <div class="filters-meta">
+              <span id="filter-summary"></span>
+              <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
+            </div>
           </div>
-        </div>
-        <div class="panel">
+        </section>
+
+        <section class="panel">
           <div class="panel-head">
-            <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
+            <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
+            <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
           </div>
-          <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
-            <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
-            <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr id="thead-row"></tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
           </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
-          <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
-        </div>
-        <div class="panel-body">
-          <div class="filters">
-            <div class="field grow">
-              <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
-              <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
-            </div>
-            <div class="field">
-              <label for="f-cat">Categoría contable</label>
-              <select id="f-cat"><option value="">Todas</option></select>
-            </div>
-            <div class="field">
-              <label for="f-ubicacion">Ubicación</label>
-              <select id="f-ubicacion"><option value="">Todas</option></select>
-            </div>
-            <div class="field">
-              <label for="f-estado">Estado inventario</label>
-              <select id="f-estado"><option value="">Todos</option></select>
-            </div>
-            <div class="checkfield">
-              <input type="checkbox" id="f-baja">
-              <label for="f-baja">Solo dados de baja</label>
+          <div id="empty-state" class="empty-state" style="display:none;">
+            <h3>Sin resultados</h3>
+            <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
+          </div>
+          <div class="pagination">
+            <span id="page-info"></span>
+            <div class="page-btns">
+              <button id="page-first">« Primera</button>
+              <button id="page-prev">‹ Anterior</button>
+              <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+              <button id="page-next">Siguiente ›</button>
+              <button id="page-last">Última »</button>
             </div>
           </div>
-          <div class="filters-meta">
-            <span id="filter-summary"></span>
-            <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      <section class="panel">
-        <div class="panel-head">
-          <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
-          <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
-        </div>
-        <div class="table-scroll">
-          <table>
-            <thead>
-              <tr id="thead-row"></tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-          </table>
-        </div>
-        <div id="empty-state" class="empty-state" style="display:none;">
-          <h3>Sin resultados</h3>
-          <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
-        </div>
-        <div class="pagination">
-          <span id="page-info"></span>
-          <div class="page-btns">
-            <button id="page-first">« Primera</button>
-            <button id="page-prev">‹ Anterior</button>
-            <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
-            <button id="page-next">Siguiente ›</button>
-            <button id="page-last">Última »</button>
+      <div id="view-categorias" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Categorías contables</h2>
           </div>
-        </div>
-      </section>
-    </main>
-
-    <div id="view-categorias" class="view">
-      <section class="panel">
-        <div class="panel-head">
-          <h2 class="panel-title">Categorías contables</h2>
-        </div>
-        <form class="admin-form" id="form-categoria">
-          <div class="field"><label>Código (cuenta)</label><input type="text" id="cat-key" placeholder="Ej: 14913" required></div>
-          <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="cat-label" placeholder="Ej: Herramientas y equipos menores" required></div>
-          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-        </form>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>Código</th><th>Etiqueta</th><th style="width:100px;">Acciones</th></tr></thead>
-            <tbody id="tbody-categorias"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div id="view-ubicaciones" class="view">
-      <section class="panel">
-        <div class="panel-head"><h2 class="panel-title">Ubicaciones</h2></div>
-        <form class="admin-form" id="form-ubicacion" style="align-items:flex-end;">
-          <div class="field" style="flex:1;">
-            <label>División / Repartición</label>
-            <select id="ubi-division" required>
-              <option value="">-- Seleccione --</option>
-            </select>
+          <form class="admin-form" id="form-categoria">
+            <div class="field"><label>Código (cuenta)</label><input type="text" id="cat-key" placeholder="Ej: 14913"
+                required></div>
+            <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="cat-label"
+                placeholder="Ej: Herramientas y equipos menores" required></div>
+            <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+          </form>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Etiqueta</th>
+                  <th style="width:100px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-categorias"></tbody>
+            </table>
           </div>
-          <div class="field" style="flex:1;">
-            <label>Departamento / Unidad</label>
-            <select id="ubi-depto" required disabled>
-              <option value="">-- Seleccione División primero --</option>
-            </select>
-          </div>
-          <div class="field grow">
-            <label>Detalle exacto de la ubicación</label>
-            <input type="text" id="ubi-name" list="detalles-list" placeholder="Ej: Oficina 301, Bodega..." required>
-          </div>
-          <button class="btn btn-primary btn-sm" type="submit" style="margin-bottom:2px;">+ Agregar</button>
-        </form>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>Ubicación</th><th style="width:100px;">Acciones</th></tr></thead>
-            <tbody id="tbody-ubicaciones"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div id="view-estados" class="view">
-      <section class="panel">
-        <div class="panel-head"><h2 class="panel-title">Estados de inventario</h2></div>
-        <form class="admin-form" id="form-estado">
-          <div class="field"><label>Nombre del estado</label><input type="text" id="estado-name" placeholder="Ej: En reparación" required></div>
-          <div class="field">
-            <label>Color de etiqueta</label>
-            <select id="estado-color">
-              <option value="teal">Verde (activo/ok)</option>
-              <option value="amber">Ámbar (pendiente)</option>
-              <option value="brick">Rojo (alerta/baja)</option>
-              <option value="slate">Gris (neutro)</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-        </form>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>Estado</th><th>Vista previa</th><th style="width:100px;">Acciones</th></tr></thead>
-            <tbody id="tbody-estados"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div id="view-usuarios" class="view">
-      <section class="panel">
-        <div class="panel-head"><h2 class="panel-title">Usuarios</h2></div>
-        <p class="admin-note">Módulo preliminar: aún no hay autenticación ni permisos reales — solo guarda la lista en esta sesión, como base para conectar a un backend más adelante.</p>
-        <form class="admin-form" id="form-usuario">
-          <div class="field"><label>Nombre</label><input type="text" id="usr-nombre" required></div>
-          <div class="field"><label>Correo</label><input type="email" id="usr-correo" required></div>
-          <div class="field">
-            <label>Rol</label>
-            <select id="usr-rol">
-              <option value="Administrador">Administrador</option>
-              <option value="Editor">Editor</option>
-              <option value="Solo lectura">Solo lectura</option>
-            </select>
-          </div>
-          <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
-        </form>
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th style="width:100px;">Acciones</th></tr></thead>
-            <tbody id="tbody-usuarios"></tbody>
-          </table>
-        </div>
-      </section>
-    </div>
-
-    <div id="view-personalizacion" class="view">
-      <section class="panel">
-        <div class="panel-head"><h2 class="panel-title">Personalización del Sistema</h2></div>
-        <div class="panel-body">
-          <p class="admin-note" style="margin-top:0; padding:0 0 16px;">Sube el logo de tu institución. Este se guardará temporalmente en tu navegador hasta que se implemente una base de datos central.</p>
-          <div class="field">
-            <label for="logo-upload">Logo de la institución (PNG/JPG)</label>
-            <input type="file" id="logo-upload" accept="image/png, image/jpeg" style="max-width: 400px; padding: 10px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper-alt);">
-          </div>
-          <div style="margin-top: 16px; display:flex; gap:10px;">
-             <button class="btn btn-primary" id="btn-save-logo">Guardar Logo</button>
-             <button class="btn btn-line" id="btn-clear-logo">Eliminar Logo</button>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida para el sistema completo</footer>
-  </div>
-</div>
-
-<div class="scrim" id="scrim"></div>
-<aside class="ficha" id="ficha" aria-hidden="true">
-  <div class="ficha-head" style="flex-direction: column; align-items: stretch; gap: 16px;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-      <div>
-        <p class="ficha-head-eyebrow" id="ficha-id-line">FICHA DE ACTIVO N° <span id="ficha-id"></span></p>
-        <h2 id="ficha-titulo">Detalle</h2>
+        </section>
       </div>
-      <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">×</button>
-    </div>
-    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-      <button class="btn btn-line btn-sm" id="btn-edit-asset" style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar ✎</button>
-      <button class="btn btn-line btn-sm" id="btn-baja-asset" style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja ↓</button>
-      <button class="btn btn-line btn-sm" id="btn-delete-asset" style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar 🗑</button>
-    </div>
-  </div>
-  <div class="ficha-scroll" id="ficha-body"></div>
-</aside>
 
-<div class="crud-modal-scrim" id="crud-modal-scrim"></div>
-<div class="crud-modal" id="crud-modal" aria-hidden="true">
-  <div class="crud-modal-header">
-    <h2 id="crud-modal-title">Nuevo Bien</h2>
-    <button class="crud-modal-close" id="btn-close-modal">✕</button>
+      <div id="view-ubicaciones" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Ubicaciones y Dependencias</h2>
+            <button class="btn btn-primary btn-sm" id="btn-add-ubicacion">+ Nueva Ubicación</button>
+          </div>
+          <div class="table-scroll" style="margin-top: 16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estructura Organizacional</th>
+                  <th style="width:140px; text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-ubicaciones"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="view-estados" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Estados de inventario</h2>
+          </div>
+          <form class="admin-form" id="form-estado">
+            <div class="field"><label>Nombre del estado</label><input type="text" id="estado-name"
+                placeholder="Ej: En reparación" required></div>
+            <div class="field">
+              <label>Color de etiqueta</label>
+              <select id="estado-color">
+                <option value="teal">Verde (activo/ok)</option>
+                <option value="amber">Ámbar (pendiente)</option>
+                <option value="brick">Rojo (alerta/baja)</option>
+                <option value="slate">Gris (neutro)</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+          </form>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>Vista previa</th>
+                  <th style="width:100px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-estados"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="view-usuarios" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Usuarios</h2>
+          </div>
+          <p class="admin-note">Módulo preliminar: aún no hay autenticación ni permisos reales — solo guarda la lista en
+            esta sesión, como base para conectar a un backend más adelante.</p>
+          <form class="admin-form" id="form-usuario">
+            <div class="field"><label>Nombre</label><input type="text" id="usr-nombre" required></div>
+            <div class="field"><label>Correo</label><input type="email" id="usr-correo" required></div>
+            <div class="field">
+              <label>Rol</label>
+              <select id="usr-rol">
+                <option value="Administrador">Administrador</option>
+                <option value="Editor">Editor</option>
+                <option value="Solo lectura">Solo lectura</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+          </form>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th style="width:100px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-usuarios"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div id="view-personalizacion" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Personalización del Sistema</h2>
+          </div>
+          <div class="panel-body">
+            <p class="admin-note" style="margin-top:0; padding:0 0 16px;">Sube el logo de tu institución. Este se
+              guardará temporalmente en tu navegador hasta que se implemente una base de datos central.</p>
+            <div class="field">
+              <label for="logo-upload">Logo de la institución (PNG/JPG)</label>
+              <input type="file" id="logo-upload" accept="image/png, image/jpeg"
+                style="max-width: 400px; padding: 10px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--paper-alt);">
+            </div>
+            <div style="margin-top: 16px; display:flex; gap:10px;">
+              <button class="btn btn-primary" id="btn-save-logo">Guardar Logo</button>
+              <button class="btn btn-line" id="btn-clear-logo">Eliminar Logo</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida
+        para el sistema completo</footer>
+    </div>
   </div>
+
+  <div class="scrim" id="scrim"></div>
+  <aside class="ficha" id="ficha" aria-hidden="true">
+    <div class="ficha-head" style="flex-direction: column; align-items: stretch; gap: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+        <div>
+          <p class="ficha-head-eyebrow" id="ficha-id-line">FICHA DE ACTIVO N° <span id="ficha-id"></span></p>
+          <h2 id="ficha-titulo">Detalle</h2>
+        </div>
+        <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">×</button>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <button class="btn btn-line btn-sm" id="btn-edit-asset"
+          style="background: rgba(255,255,255,0.1); color: var(--white); border-color: rgba(255,255,255,0.2);">Editar
+          ✎</button>
+        <button class="btn btn-line btn-sm" id="btn-baja-asset"
+          style="background: rgba(255,255,255,0.1); color: #FCD34D; border-color: rgba(255,255,255,0.2);">Dar de Baja
+          ↓</button>
+        <button class="btn btn-line btn-sm" id="btn-delete-asset"
+          style="background: rgba(255,255,255,0.1); color: #FCA5A5; border-color: rgba(255,255,255,0.2);">Eliminar
+          🗑</button>
+      </div>
+    </div>
+    <div class="ficha-scroll" id="ficha-body"></div>
+  </aside>
+
+  <div class="crud-modal-scrim" id="crud-modal-scrim"></div>
+  <div class="crud-modal" id="crud-modal" aria-hidden="true">
+    <div class="crud-modal-header">
+      <h2 id="crud-modal-title">Nuevo Bien</h2>
+      <button class="crud-modal-close" id="btn-close-modal">✕</button>
+    </div>
     <div class="crud-modal-body">
       <form id="crud-form">
         <input type="hidden" id="crud-id">
@@ -296,20 +341,26 @@
               <h3>Identificación</h3>
               <div class="field"><label>Categoría contable</label><select id="crud-cat" required></select></div>
               <div class="field"><label>Cuenta contable</label><input type="text" id="crud-cta"></div>
-              <div class="field"><label>Detalle / Descripción</label><input type="text" id="crud-detalle" required></div>
+              <div class="field"><label>Detalle / Descripción</label><input type="text" id="crud-detalle" required>
+              </div>
               <div class="field"><label>Tipo de bien</label><input type="text" id="crud-tipoBien"></div>
               <div class="field"><label>Código / N° Serie</label><input type="text" id="crud-codigo"></div>
             </div>
             <div class="form-section">
               <h3>Depreciación (Automática)</h3>
-              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-1"></span></label><input type="text" id="crud-dep2024" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-2"></span></label><input type="text" id="crud-dep2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Año <span id="lbl-dep-3"></span></label><input type="text" id="crud-depAnio2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Valor Libro</label><input type="text" id="crud-valorLibro" readonly style="background:#f1f5f9; color:#64748b; font-weight:bold;"></div>
+              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual"
+                  readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-1"></span></label><input type="text"
+                  id="crud-dep2024" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-2"></span></label><input type="text"
+                  id="crud-dep2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Año <span id="lbl-dep-3"></span></label><input type="text"
+                  id="crud-depAnio2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Valor Libro</label><input type="text" id="crud-valorLibro" readonly
+                  style="background:#f1f5f9; color:#64748b; font-weight:bold;"></div>
             </div>
           </div>
-          
+
           <!-- Columna Derecha -->
           <div style="display:flex; flex-direction:column; gap:24px;">
             <div class="form-section">
@@ -335,7 +386,10 @@
             </div>
             <div class="form-section">
               <h3>Estado y Ubicación</h3>
-              <div class="field"><label>Ubicación</label><select id="crud-ubicacion"></select></div>
+              <div class="field"><label>División / Repartición</label><select id="crud-ubi-division" required></select></div>
+              <div class="field"><label>Departamento / Unidad</label><select id="crud-ubi-unidad" required disabled></select></div>
+              <div class="field"><label>Dependencia (Opcional)</label><select id="crud-ubi-dependencia" disabled><option value="">-- Ninguna --</option></select></div>
+              <input type="hidden" id="crud-ubicacion">
               <div class="field"><label>Estado</label><select id="crud-estado"></select></div>
               <div class="field"><label>Responsable</label><input type="text" id="crud-responsable"></div>
               <div class="field"><label>Fecha Registro</label><input type="date" id="crud-fRegistro"></div>
@@ -351,14 +405,14 @@
       <button type="button" class="btn btn-line" id="btn-cancel-modal">Cancelar</button>
       <button type="button" class="btn btn-primary" id="btn-save-modal">Guardar Bien</button>
     </div>
-</div>
-
-<div class="crud-modal-scrim" id="baja-modal-scrim"></div>
-<div class="crud-modal" id="baja-modal" aria-hidden="true" style="max-width: 600px;">
-  <div class="crud-modal-header">
-    <h2 id="baja-modal-title">Dar de Baja Bien</h2>
-    <button class="crud-modal-close" id="btn-close-baja">✕</button>
   </div>
+
+  <div class="crud-modal-scrim" id="baja-modal-scrim"></div>
+  <div class="crud-modal" id="baja-modal" aria-hidden="true" style="max-width: 600px;">
+    <div class="crud-modal-header">
+      <h2 id="baja-modal-title">Dar de Baja Bien</h2>
+      <button class="crud-modal-close" id="btn-close-baja">✕</button>
+    </div>
     <div class="crud-modal-body">
       <form id="baja-form">
         <div class="form-section">
@@ -376,48 +430,68 @@
     </div>
     <div class="crud-modal-footer">
       <button type="button" class="btn btn-line" id="btn-cancel-baja">Cancelar</button>
-      <button type="button" class="btn btn-primary" id="btn-save-baja" style="background:var(--amber); border-color:var(--amber); color:white;">Procesar Baja</button>
+      <button type="button" class="btn btn-primary" id="btn-save-baja"
+        style="background:var(--amber); border-color:var(--amber); color:white;">Procesar Baja</button>
     </div>
-</div>
-
-<div class="crud-modal-scrim" id="edit-ubi-modal-scrim"></div>
-<div class="crud-modal" id="edit-ubi-modal" aria-hidden="true" style="max-width: 600px;">
-  <div class="crud-modal-header">
-    <h2 id="edit-ubi-modal-title">Mover / Editar Ubicación</h2>
-    <button class="crud-modal-close" id="btn-close-edit-ubi">✕</button>
   </div>
-  <div class="crud-modal-body">
-    <form id="edit-ubi-form">
-      <input type="hidden" id="edit-ubi-oldname">
-      <input type="hidden" id="edit-ubi-gidx">
-      <input type="hidden" id="edit-ubi-oidx">
-      <div class="form-section">
-        <div class="form-grid" style="gap:24px;">
-          <div class="field" style="grid-column: 1 / -1;">
-            <label>División / Repartición</label>
-            <select id="edit-ubi-division" required></select>
-          </div>
-          <div class="field" style="grid-column: 1 / -1;">
-            <label>Departamento / Unidad</label>
-            <select id="edit-ubi-depto" required disabled></select>
-          </div>
-          <div class="field" style="grid-column: 1 / -1;">
-            <label>Detalle exacto de la ubicación</label>
-            <input type="text" id="edit-ubi-name" list="detalles-list" required>
+
+  <div class="crud-modal-scrim" id="tree-modal-scrim"></div>
+  <div class="crud-modal" id="tree-modal" aria-hidden="true" style="max-width: 500px;">
+    <div class="crud-modal-header">
+      <h2 id="tree-modal-title">Gestionar Ubicación</h2>
+      <button class="crud-modal-close" id="btn-close-tree">✕</button>
+    </div>
+    <div class="crud-modal-body">
+      <form id="tree-form">
+        <input type="hidden" id="tree-action">
+        <input type="hidden" id="tree-target-id">
+        <div class="form-section">
+          <div class="form-grid" style="gap:24px;">
+            <div class="field" style="grid-column: 1 / -1;">
+              <label>¿Qué deseas registrar/editar?</label>
+              <select id="tree-tipo" required>
+                <option value="division">1. División / Repartición</option>
+                <option value="unidad">2. Departamento / Unidad</option>
+                <option value="dependencia">3. Dependencia (Oficina, Bodega)</option>
+              </select>
+            </div>
+            
+            <div class="field" id="tree-field-division" style="grid-column: 1 / -1; display: none;">
+              <label>Selecciona División Padre</label>
+              <select id="tree-sel-division"></select>
+            </div>
+            
+            <div class="field" id="tree-field-unidad" style="grid-column: 1 / -1; display: none;">
+              <label>Selecciona Unidad Padre</label>
+              <select id="tree-sel-unidad"></select>
+            </div>
+            
+            <div class="field" style="grid-column: 1 / -1;">
+              <label id="tree-lbl-nombre">Nombre</label>
+              <input type="text" id="tree-nombre" required>
+            </div>
+            
+            <div class="field" id="tree-field-direccion" style="grid-column: 1 / -1; display: none;">
+              <label>Dirección</label>
+              <input type="text" id="tree-direccion" placeholder="Ej: Av. Décima Región #480, Puerto Montt">
+            </div>
+            
+            <div class="field" id="tree-field-edificio" style="grid-column: 1 / -1; display: none;">
+              <label>Edificio</label>
+              <input type="text" id="tree-edificio" placeholder="Ej: Edificio Anexo">
+            </div>
           </div>
         </div>
-      </div>
-    </form>
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-tree">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-tree">Guardar Cambios</button>
+    </div>
   </div>
-  <div class="crud-modal-footer">
-    <button type="button" class="btn btn-line" id="btn-cancel-edit-ubi">Cancelar</button>
-    <button type="button" class="btn btn-primary" id="btn-save-edit-ubi">Guardar Cambios</button>
-  </div>
-</div>
 
-<datalist id="detalles-list"></datalist>
-
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>
