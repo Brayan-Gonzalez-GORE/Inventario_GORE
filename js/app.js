@@ -266,7 +266,7 @@ function renderKPIs(){
 }
 
 /* ===== Chart: bars por categoría ===== */
-const CHART_COLORS = ['#0F3A66','#059669','#D97706','#64748B','#0369A1','#0F172A'];
+const CHART_COLORS = ['#00539A','#3B9144','#F59120','#8CD5F6','#64748B','#0F172A'];
 function renderBarChart(){
   const svg = document.getElementById('chart-bars');
   const byCat = {};
@@ -304,7 +304,7 @@ function renderDonut(){
     const key = r.estado ? normEstado(r.estado) : 'Sin registrar';
     counts[key] = (counts[key]||0)+1;
   });
-  const colorMap = {'Operativo':'#059669','En Bodega':'#D97706','De Baja':'#DC2626','Sin registrar':'#CBD5E1'};
+  const colorMap = {'Operativo':'#3B9144','En Bodega':'#F59120','De Baja':'#DC2626','Sin registrar':'#CBD5E1'};
   const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const total = workingData.length;
   const cx=70, cy=70, r=58, rInner=34;
