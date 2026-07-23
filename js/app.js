@@ -761,12 +761,24 @@ function renderUbicaciones(){
   adminData.ubicaciones.forEach((g, i) => {
     if (g && g.group && g.options) {
       html += `<tr><td colspan="2" style="font-weight:600; font-size:11px; color:#64748b; background:#f8fafc; text-transform:uppercase; letter-spacing:0.05em; padding-top:16px;">${g.group}</td></tr>`;
-      g.options.forEach(o => {
-        html += `<tr><td style="padding-left:24px;">${o}</td><td><span style="color:#94a3b8; font-size:11px;">Fijo (Organigrama)</span></td></tr>`;
+      g.options.forEach((o, oIdx) => {
+        html += `<tr>
+          <td style="padding-left:24px;">${o}</td>
+          <td style="white-space:nowrap; text-align:right;">
+            <button class="btn btn-line btn-sm" onclick="editarUbicacionGrupo(${i}, ${oIdx})">Editar</button>
+            <button class="btn btn-line btn-sm" onclick="eliminarUbicacionGrupo(${i}, ${oIdx})">Eliminar</button>
+          </td>
+        </tr>`;
       });
     } else {
       const name = g.name || g;
-      html += `<tr><td>${name}</td><td><button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button></td></tr>`;
+      html += `<tr>
+        <td>${name}</td>
+        <td style="white-space:nowrap; text-align:right;">
+          <button class="btn btn-line btn-sm" onclick="editarUbicacion(${i})">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button>
+        </td>
+      </tr>`;
     }
   });
   document.getElementById('tbody-ubicaciones').innerHTML = html;
@@ -791,15 +803,106 @@ document.getElementById('ubi-division').addEventListener('change', function(){
     group.options.map(o => `<option value="${o}">${o}</option>`).join('');
   deptoSelect.disabled = false;
 });
-function eliminarUbicacion(i){
-  const u = adminData.ubicaciones[i];
-  if(workingData.some(r=>r.ubicacion===u.name)){
+
+function actualizarBienesUbicacion(oldName, newName) {
+  let changed = false;
+  workingData.forEach(r => {
+    if (r.ubicacion === oldName) {
+      r.ubicacion = newName;
+      changed = true;
+    }
+  });
+  if (changed) renderTable();
+}
+
+window.editarUbicacionGrupo = function(gIdx, oIdx) {
+  const group = adminData.ubicaciones[gIdx];
+  const oldName = group.options[oIdx];
+  const newName = prompt('Editar nombre de ubicación:', oldName);
+  if (newName !== null && newName.trim() !== '') {
+    const trimmed = newName.trim();
+    if (oldName === trimmed) return;
+    
+    let exists = false;
+    adminData.ubicaciones.forEach((g) => {
+      if (g.group && g.options) {
+        if (g.options.includes(trimmed)) exists = true;
+      } else {
+        if ((g.name || g) === trimmed) exists = true;
+      }
+    });
+    if (exists) {
+      alert('Esa ubicación ya existe.');
+      return;
+    }
+    
+    group.options[oIdx] = trimmed;
+    actualizarBienesUbicacion(oldName, trimmed);
+    renderUbicaciones();
+    initFilterOptions();
+  }
+};
+
+window.eliminarUbicacionGrupo = function(gIdx, oIdx) {
+  const group = adminData.ubicaciones[gIdx];
+  const u = group.options[oIdx];
+  if(workingData.some(r=>r.ubicacion===u)){
     alert('No se puede eliminar: hay bienes registrados en esta ubicación.');
     return;
   }
-  adminData.ubicaciones.splice(i,1);
-  renderUbicaciones();
-  initFilterOptions();
+  if (confirm(`¿Está seguro de eliminar la ubicación "${u}"?`)) {
+    group.options.splice(oIdx, 1);
+    renderUbicaciones();
+    initFilterOptions();
+  }
+};
+
+window.editarUbicacion = function(i) {
+  const u = adminData.ubicaciones[i];
+  const oldName = u.name || u;
+  const newName = prompt('Editar nombre de ubicación:', oldName);
+  if (newName !== null && newName.trim() !== '') {
+    const trimmed = newName.trim();
+    if (oldName === trimmed) return;
+    
+    let exists = false;
+    adminData.ubicaciones.forEach((g, idx) => {
+      if (idx === i) return;
+      if (g.group && g.options) {
+        if (g.options.includes(trimmed)) exists = true;
+      } else {
+        if ((g.name || g) === trimmed) exists = true;
+      }
+    });
+    if (exists) {
+      alert('Esa ubicación ya existe.');
+      return;
+    }
+    
+    if (u.name) {
+      adminData.ubicaciones[i].name = trimmed;
+    } else {
+      adminData.ubicaciones[i] = trimmed;
+    }
+    
+    actualizarBienesUbicacion(oldName, trimmed);
+    renderUbicaciones();
+    initFilterOptions();
+  }
+};
+
+function eliminarUbicacion(i){
+  const u = adminData.ubicaciones[i];
+  const name = u.name || u;
+  if(workingData.some(r=>r.ubicacion===name)){
+    alert('No se puede eliminar: hay bienes registrados en esta ubicación.');
+    return;
+  }
+  if (confirm(`¿Está seguro de eliminar la ubicación "${name}"?`)) {
+    adminData.ubicaciones.splice(i,1);
+    renderUbicaciones();
+    initFilterOptions();
+  }
 }
 document.getElementById('form-ubicacion').addEventListener('submit', function(e){
   e.preventDefault();
