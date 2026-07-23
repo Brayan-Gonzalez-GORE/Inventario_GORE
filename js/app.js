@@ -490,33 +490,74 @@ function updateBulkMoveButton() {
 }
 
 document.getElementById('btn-print-qr')?.addEventListener('click', () => {
+  const printModalScrim = document.getElementById('print-modal-scrim');
+  const printModal = document.getElementById('print-modal');
+  if (printModalScrim) printModalScrim.classList.add('open');
+  if (printModal) printModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+});
+
+function closePrintModal() {
+  const printModalScrim = document.getElementById('print-modal-scrim');
+  const printModal = document.getElementById('print-modal');
+  if (printModalScrim) printModalScrim.classList.remove('open');
+  if (printModal) printModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-close-print-modal')?.addEventListener('click', closePrintModal);
+document.getElementById('btn-cancel-print-modal')?.addEventListener('click', closePrintModal);
+document.getElementById('print-modal-scrim')?.addEventListener('click', (e) => {
+  if(e.target.id === 'print-modal-scrim') closePrintModal();
+});
+
+document.getElementById('btn-confirm-print')?.addEventListener('click', () => {
+  const format = document.getElementById('print-format').value;
   const printArea = document.getElementById('print-area');
   if (!printArea) return;
   printArea.innerHTML = '';
   
   const selectedAssets = workingData.filter(a => selectedIds.has(a.id));
+  const printDate = new Date().toLocaleDateString('es-CL');
   
   selectedAssets.forEach(asset => {
     const card = document.createElement('div');
     card.className = 'qr-card';
     
-    const qrDiv = document.createElement('div');
-    card.appendChild(qrDiv);
+    const codeDiv = document.createElement('div');
+    codeDiv.style.marginBottom = '10px';
+    card.appendChild(codeDiv);
+    
+    const textToEncode = asset.codigo || String(asset.id);
+    
+    if (format === 'qr') {
+      new QRCode(codeDiv, {
+        text: textToEncode,
+        width: 100,
+        height: 100
+      });
+    } else {
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      codeDiv.appendChild(svg);
+      JsBarcode(svg, textToEncode, {
+        format: "CODE128",
+        width: 1.5,
+        height: 50,
+        displayValue: true,
+        fontSize: 14,
+        margin: 0
+      });
+    }
     
     const info = document.createElement('p');
     const detalleCorto = asset.detalle.length > 30 ? asset.detalle.substring(0, 30) + '...' : asset.detalle;
-    info.innerHTML = `<strong>${asset.codigo || 'S/C'}</strong>${detalleCorto}<br>ID: ${asset.id}`;
+    info.innerHTML = `<strong>${asset.codigo ? '' : '(ID) '}${textToEncode}</strong>${detalleCorto}<br><span style="color:var(--ink-soft); font-size:9px;">Impreso: ${printDate}</span>`;
     card.appendChild(info);
     
     printArea.appendChild(card);
-    
-    new QRCode(qrDiv, {
-      text: asset.codigo || String(asset.id),
-      width: 100,
-      height: 100
-    });
   });
   
+  closePrintModal();
   setTimeout(() => window.print(), 300);
 });
 
@@ -2299,11 +2340,191 @@ document.getElementById('btn-save-bulk-move')?.addEventListener('click', () => {
 /* ===== Escáner QR ===== */
 let html5QrcodeScanner = null;
 
+const formatosSoportados = [
+  Html5QrcodeSupportedFormats.CODE_128,
+  Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.EAN_13,
+  Html5QrcodeSupportedFormats.EAN_8,
+  Html5QrcodeSupportedFormats.QR_CODE
+];
+
+function cargarSugerenciasScanner() {
+  const marcas = new Set();
+  const modelos = new Set();
+  const ubicaciones = new Set();
+  
+  workingData.forEach(r => {
+    if (r.marca) marcas.add(r.marca);
+    if (r.modelo) modelos.add(r.modelo);
+    if (r.ubicacion) ubicaciones.add(r.ubicacion);
+  });
+  
+  llenarDatalist('lista-marcas', Array.from(marcas));
+  llenarDatalist('lista-modelos', Array.from(modelos));
+  llenarDatalist('lista-ubicaciones', Array.from(ubicaciones));
+}
+
+function llenarDatalist(idList, opciones) {
+  const datalist = document.getElementById(idList);
+  if (!datalist) return;
+  datalist.innerHTML = '';
+  opciones.forEach(opcion => {
+    if (opcion) {
+      const opt = document.createElement('option');
+      opt.value = opcion;
+      datalist.appendChild(opt);
+    }
+  });
+}
+
+function initScannerUbicacionSelects() {
+  const divSelect = document.getElementById('scan-ubi-division');
+  const uniSelect = document.getElementById('scan-ubi-unidad');
+  const depSelect = document.getElementById('scan-ubi-dependencia');
+
+  if (divSelect) {
+    divSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+      adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+
+    divSelect.onchange = function () {
+      const d = adminData.divisiones.find(x => x.id === this.value);
+      if (d) {
+        uniSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+          d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+        uniSelect.disabled = false;
+      } else {
+        uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+        uniSelect.disabled = true;
+      }
+      depSelect.innerHTML = '<option value="">-- Opcional --</option>';
+      depSelect.disabled = true;
+      actualizarUbicacionOcultaScanner();
+    };
+
+    uniSelect.onchange = function () {
+      const d = adminData.divisiones.find(x => x.id === divSelect.value);
+      const u = d ? d.unidades.find(x => x.id === this.value) : null;
+      if (u && u.dependencias.length > 0) {
+        depSelect.innerHTML = '<option value="">-- Seleccione / Ninguna --</option>' +
+          u.dependencias.map(dep => `<option value="${dep.id}">${dep.nombre}</option>`).join('');
+        depSelect.disabled = false;
+      } else {
+        depSelect.innerHTML = '<option value="">-- Sin dependencias --</option>';
+        depSelect.disabled = true;
+      }
+      actualizarUbicacionOcultaScanner();
+    };
+
+    depSelect.onchange = actualizarUbicacionOcultaScanner;
+  }
+}
+
+function actualizarUbicacionOcultaScanner() {
+  const divId = document.getElementById('scan-ubi-division').value;
+  const uniId = document.getElementById('scan-ubi-unidad').value;
+  const depId = document.getElementById('scan-ubi-dependencia').value;
+
+  let ubiStr = '';
+  if (divId && uniId) {
+    const d = adminData.divisiones.find(x => x.id === divId);
+    const u = d ? d.unidades.find(x => x.id === uniId) : null;
+    const dep = u && depId ? u.dependencias.find(x => x.id === depId) : null;
+
+    if (d && u) {
+      ubiStr = `${d.nombre} - ${u.nombre}`;
+      if (dep) ubiStr += ` - ${dep.nombre}`;
+    }
+  }
+  document.getElementById('scan-ubicacion').value = ubiStr;
+  guardarPreferenciasScanner();
+}
+
+function loadAssetUbicacionToDropdownsScanner(ubiStr) {
+  const divSelect = document.getElementById('scan-ubi-division');
+  const uniSelect = document.getElementById('scan-ubi-unidad');
+  const depSelect = document.getElementById('scan-ubi-dependencia');
+
+  if (!ubiStr) {
+    divSelect.value = '';
+    if (divSelect.onchange) divSelect.onchange();
+    return;
+  }
+
+  const parts = ubiStr.split(' - ');
+  if (parts.length >= 2) {
+    const divName = parts[0].trim();
+    const uniName = parts[1].trim();
+    const depName = parts.slice(2).join(' - ').trim();
+
+    const d = adminData.divisiones.find(x => x.nombre === divName);
+    if (d) {
+      divSelect.value = d.id;
+      if (divSelect.onchange) divSelect.onchange();
+
+      const u = d.unidades.find(x => x.nombre === uniName);
+      if (u) {
+        uniSelect.value = u.id;
+        if (uniSelect.onchange) uniSelect.onchange();
+
+        if (depName) {
+          const dep = u.dependencias.find(x => x.nombre === depName);
+          if (dep) depSelect.value = dep.id;
+        }
+      }
+    }
+  } else {
+    divSelect.value = '';
+    if (divSelect.onchange) divSelect.onchange();
+  }
+  actualizarUbicacionOcultaScanner();
+}
+
+function guardarPreferenciasScanner() {
+  localStorage.setItem('inv_ubicacion', document.getElementById('scan-ubicacion').value);
+  localStorage.setItem('inv_responsable', document.getElementById('scan-responsable').value);
+  localStorage.setItem('inv_estado', document.getElementById('scan-estado').value);
+}
+
+function cargarPreferenciasScanner() {
+  if (localStorage.getItem('inv_ubicacion')) {
+    loadAssetUbicacionToDropdownsScanner(localStorage.getItem('inv_ubicacion'));
+  }
+  if (localStorage.getItem('inv_responsable')) {
+    document.getElementById('scan-responsable').value = localStorage.getItem('inv_responsable');
+  }
+  if (localStorage.getItem('inv_estado')) {
+    document.getElementById('scan-estado').value = localStorage.getItem('inv_estado');
+  }
+}
+
 function initScanner() {
+  cargarSugerenciasScanner();
+  initScannerUbicacionSelects();
+  cargarPreferenciasScanner();
   if (html5QrcodeScanner) return;
+  
   html5QrcodeScanner = new Html5QrcodeScanner(
-    "qr-reader",
-    { fps: 10, qrbox: {width: 250, height: 250} },
+    "qr-reader", 
+    { 
+      fps: 20, 
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        return {
+          width: Math.floor(viewfinderWidth * 0.90),
+          height: Math.floor(viewfinderHeight * 0.25)
+        };
+      },
+      formatsToSupport: formatosSoportados,
+      showTorchButtonIfSupported: true,
+      videoConstraints: {
+        facingMode: "environment",
+        width: { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        focusMode: "continuous"
+      },
+      experimentalFeatures: {
+        useBarCodeDetectorIfSupported: true
+      }
+    }, 
     false
   );
   html5QrcodeScanner.render(onScanSuccess, onScanFailure);
@@ -2311,36 +2532,117 @@ function initScanner() {
 
 function stopScanner() {
   if (html5QrcodeScanner) {
-    try {
-      html5QrcodeScanner.clear();
-    } catch(e) {
-      console.error(e);
-    }
+    try { html5QrcodeScanner.clear(); } catch(e) {}
     html5QrcodeScanner = null;
   }
 }
 
 function onScanSuccess(decodedText) {
-  const resultDiv = document.getElementById('qr-result');
+  document.getElementById('scan-codigo').value = decodedText;
+  if (navigator.vibrate) navigator.vibrate(100);
+  
+  // Buscar si existe el bien
   const asset = workingData.find(a => String(a.codigo) === decodedText || String(a.id) === decodedText);
   if (asset) {
-    asset.estado = "Operativo";
-    refreshAll();
-    resultDiv.innerHTML = `<p style="color:var(--teal);"><strong style="font-size:18px;">✅ ¡Encontrado y Operativo!</strong><br>ID: ${asset.id} | Código: ${asset.codigo || 'S/C'}<br>${asset.detalle}</p>`;
-    resultDiv.style.borderColor = 'var(--teal)';
-    resultDiv.style.backgroundColor = 'rgba(59, 145, 68, 0.05)';
+    document.getElementById('scan-tipo').value = asset.tipoBien || '';
+    document.getElementById('scan-marca').value = asset.marca || '';
+    document.getElementById('scan-modelo').value = asset.modelo || '';
+    document.getElementById('scan-anio').value = asset.anio || '';
+    loadAssetUbicacionToDropdownsScanner(asset.ubicacion);
+    document.getElementById('scan-estado').value = asset.estado || 'Operativo';
+    document.getElementById('scan-responsable').value = asset.responsable || '';
+    document.getElementById('scan-obs').value = asset.obsInv || '';
+    mostrarStatusScanner(`Bien encontrado. Puedes actualizar sus datos.`, "var(--teal)", "var(--white)");
   } else {
-    resultDiv.innerHTML = `<p style="color:var(--brick);">❌ Bien no encontrado en la base de datos.<br>Lectura: ${decodedText}</p>`;
-    resultDiv.style.borderColor = 'var(--brick)';
-    resultDiv.style.backgroundColor = 'rgba(220, 38, 38, 0.05)';
+    mostrarStatusScanner(`Código nuevo leído. Completa los datos para registrarlo.`, "var(--amber)", "var(--ink)");
   }
 }
 
 function onScanFailure(error) {
-  // Ignorar errores continuos mientras busca
+  // Ignorar
 }
 
-// Interceptar clicks de menú para apagar/encender cámara
+function mostrarStatusScanner(mensaje, bg, color) {
+  const statusDiv = document.getElementById('scan-status');
+  statusDiv.style.display = 'block';
+  statusDiv.style.backgroundColor = bg;
+  statusDiv.style.color = color;
+  statusDiv.textContent = mensaje;
+  setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
+}
+
+function enviarDatosScanner() {
+  const qrCodigo = document.getElementById('scan-codigo').value.trim();
+  const tipo = document.getElementById('scan-tipo').value.trim();
+  const marca = document.getElementById('scan-marca').value.trim();
+  const modelo = document.getElementById('scan-modelo').value.trim();
+  const anio = document.getElementById('scan-anio').value.trim();
+  const ubicacion = document.getElementById('scan-ubicacion').value.trim();
+  const estado = document.getElementById('scan-estado').value.trim();
+  const observaciones = document.getElementById('scan-obs').value.trim();
+  const responsable = document.getElementById('scan-responsable').value.trim();
+
+  if (!qrCodigo || !tipo || !marca || !responsable) {
+    mostrarStatusScanner("Campos obligatorios faltantes.", "var(--brick)", "var(--white)");
+    return;
+  }
+
+  guardarPreferenciasScanner();
+  
+  const detalle = [tipo, marca, modelo, anio].filter(Boolean).join(' ');
+  const fRegistro = new Date().toISOString().split('T')[0];
+
+  let asset = workingData.find(a => String(a.codigo) === qrCodigo || String(a.id) === qrCodigo);
+  if (asset) {
+    asset.tipoBien = tipo;
+    asset.marca = marca;
+    asset.modelo = modelo;
+    asset.anio = anio;
+    asset.detalle = detalle;
+    asset.ubicacion = ubicacion;
+    asset.estado = estado;
+    asset.obsInv = observaciones;
+    asset.responsable = responsable;
+    asset.fRegistro = fRegistro;
+    mostrarStatusScanner("Implemento actualizado correctamente.", "var(--teal)", "var(--white)");
+  } else {
+    const maxId = workingData.reduce((max, r) => Math.max(max, r.id || 0), 0);
+    asset = {
+      id: maxId + 1,
+      codigo: qrCodigo,
+      tipoBien: tipo,
+      marca: marca,
+      modelo: modelo,
+      anio: anio,
+      detalle: detalle,
+      ubicacion: ubicacion,
+      estado: estado,
+      obsInv: observaciones,
+      responsable: responsable,
+      fRegistro: fRegistro,
+      cat: '',
+      valorCompra: 0,
+      valorLibro: 1,
+      dep2024: 0,
+      dep2025: 0,
+      depAnio2025: 0
+    };
+    workingData.push(asset);
+    mostrarStatusScanner("Nuevo implemento registrado con éxito.", "var(--teal)", "var(--white)");
+  }
+  
+  // Limpiar parte del formulario pero mantener preferencias
+  document.getElementById('scan-codigo').value = '';
+  document.getElementById('scan-tipo').value = '';
+  document.getElementById('scan-marca').value = '';
+  document.getElementById('scan-modelo').value = '';
+  document.getElementById('scan-anio').value = '';
+  document.getElementById('scan-obs').value = '';
+  
+  refreshAll();
+  cargarSugerenciasScanner();
+}
+
 document.querySelectorAll('.sidebar-link').forEach(link => {
   link.addEventListener('click', () => {
     const viewId = link.dataset.view;

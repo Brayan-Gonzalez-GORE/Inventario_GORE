@@ -638,6 +638,11 @@ footer{
   /* Fix modal grid on smaller screens */
   .form-grid{ grid-template-columns:1fr !important; }
 }
+
+/* --- SCANNER STYLES --- */
+#view-escaner { overscroll-behavior-y: none; overscroll-behavior-x: none; }
+#qr-reader video { object-fit: cover !important; width: 100% !important; border-radius: var(--radius); }
+
 @media (max-width:640px){
   .kpi-grid{ grid-template-columns:repeat(2,1fr); }
   .topbar{ padding:18px 16px; }
@@ -683,7 +688,7 @@ footer{
     font-family: var(--sans);
     background: white;
   }
-  .qr-card img, .qr-card canvas {
+  .qr-card img, .qr-card canvas, .qr-card svg {
     margin: 0 auto;
     display: block;
     max-width: 100%;

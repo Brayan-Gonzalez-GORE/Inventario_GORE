@@ -14,6 +14,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
 </head>
 
 <body>
@@ -220,18 +221,95 @@
         </section>
       </main>
 
-      <div id="view-escaner" class="view" style="display:none;">
-        <section class="panel">
+      <div id="view-escaner" class="view">
+        <datalist id="lista-marcas"></datalist>
+        <datalist id="lista-modelos"></datalist>
+        <datalist id="lista-ubicaciones"></datalist>
+        
+        <section class="panel" style="max-width: 700px; margin: 0 auto;">
           <div class="panel-head">
-            <h2 class="panel-title">Toma de Inventario (Escáner Móvil)</h2>
+            <h2 class="panel-title">📱 Escáner de Inventario TI</h2>
           </div>
-          <div class="panel-body" style="display:flex; flex-direction:column; align-items:center; gap:20px;">
-            <div style="max-width: 500px; width: 100%;">
-              <div id="qr-reader"></div>
-            </div>
-            <div id="qr-result" style="width: 100%; max-width: 500px; padding: 16px; border-radius: var(--radius); text-align:center; background: var(--surface); border: 1px solid var(--line);">
-              <p style="color:var(--ink-soft);">Escanea un código QR para marcar el bien como <strong>Operativo</strong>.</p>
-            </div>
+          <div class="panel-body" style="display:flex; flex-direction:column; align-items:stretch; gap:20px;">
+            <div id="qr-reader" style="width: 100%; border-radius: var(--radius); overflow: hidden; background: #000;"></div>
+            
+            <form id="escaner-form" class="admin-form" style="flex-direction: column; align-items: stretch;" onsubmit="event.preventDefault(); enviarDatosScanner();">
+              <div class="form-section">
+                <div class="field">
+                  <label for="scan-codigo">Código QR / Barras / N° Serie</label>
+                  <input type="text" id="scan-codigo" placeholder="Escanee o digite el identificador principal..." required>
+                </div>
+                
+                <div class="form-grid" style="gap:16px;">
+                  <div class="field">
+                    <label for="scan-tipo">Tipo de Equipo *</label>
+                    <select id="scan-tipo" required>
+                      <option value="">Seleccione...</option>
+                      <option value="Notebook">Notebook</option>
+                      <option value="Desktop">Desktop / PC</option>
+                      <option value="Monitor">Monitor</option>
+                      <option value="Proyector">Proyector</option>
+                      <option value="Tablet">Tablet</option>
+                      <option value="Impresora">Impresora</option>
+                      <option value="Router/Switch">Router / Switch</option>
+                      <option value="Vehículo">Vehículo</option>
+                      <option value="Mobiliario">Mobiliario</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="scan-marca">Marca *</label>
+                    <input type="text" id="scan-marca" list="lista-marcas" placeholder="Ej: HP, Lenovo, Samsung" required>
+                  </div>
+                </div>
+
+                <div class="form-grid" style="gap:16px;">
+                  <div class="field">
+                    <label for="scan-modelo">Modelo</label>
+                    <input type="text" id="scan-modelo" list="lista-modelos" placeholder="Ej: 348 G4, GT-P5100">
+                  </div>
+                  <div class="field">
+                    <label for="scan-anio">Año (Opcional)</label>
+                    <input type="number" id="scan-anio" placeholder="Ej: 2026" min="1990" max="2050">
+                  </div>
+                </div>
+
+                <div class="form-grid" style="gap:16px;">
+                  <div class="field"><label>División / Repartición *</label><select id="scan-ubi-division" required></select></div>
+                  <div class="field"><label>Departamento / Unidad *</label><select id="scan-ubi-unidad" required disabled></select></div>
+                </div>
+
+                <div class="form-grid" style="gap:16px;">
+                  <div class="field"><label>Dependencia (Opcional)</label><select id="scan-ubi-dependencia" disabled><option value="">-- Ninguna --</option></select></div>
+                  <div class="field">
+                    <label for="scan-estado">Estado operativo</label>
+                    <select id="scan-estado" onchange="guardarPreferenciasScanner()">
+                      <option value="Operativo">Operativo</option>
+                      <option value="Asignado">Asignado</option>
+                      <option value="En Bodega">En Bodega</option>
+                      <option value="En Mantenimiento">En Mantenimiento</option>
+                      <option value="De Baja">De Baja</option>
+                      <option value="Donado">Donado</option>
+                    </select>
+                  </div>
+                </div>
+                <input type="hidden" id="scan-ubicacion">
+                
+                <div class="field">
+                  <label for="scan-responsable">Responsable Registro *</label>
+                  <input type="text" id="scan-responsable" onchange="guardarPreferenciasScanner()" placeholder="Tu Nombre" required>
+                </div>
+
+                <div class="field">
+                  <label for="scan-obs">Observaciones / Detalles adicionales</label>
+                  <textarea id="scan-obs" rows="2" style="font-family:var(--sans); font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius); width:100%;" placeholder="Detalles como 'Sin Cargador', 'Pantalla dañada', etc..."></textarea>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:16px;">Guardar e Inventariar Equipo</button>
+              
+              <div id="scan-status" style="text-align:center; font-size:13px; font-weight:600; margin-top:16px; padding:12px; border-radius:var(--radius); display:none;"></div>
+            </form>
           </div>
         </section>
       </div>
@@ -661,6 +739,30 @@
     <div class="crud-modal-footer">
       <button type="button" class="btn btn-line" id="btn-cancel-bulk-move">Cancelar</button>
       <button type="button" class="btn btn-primary" id="btn-save-bulk-move">Mover Bienes</button>
+    </div>
+  </div>
+
+  <div class="modal-scrim" id="print-modal-scrim">
+    <div class="crud-modal" id="print-modal" role="dialog" aria-modal="true" aria-hidden="true" style="max-width:400px; padding: 24px;">
+      <div class="crud-modal-header">
+        <h2 id="print-modal-title">Opciones de Impresión</h2>
+        <button class="link-reset btn-close" id="btn-close-print-modal" aria-label="Cerrar modal">×</button>
+      </div>
+      <div class="crud-modal-body">
+        <form id="print-form" class="admin-form">
+          <div class="field">
+            <label>Formato de Etiqueta</label>
+            <select id="print-format">
+              <option value="qr">Código QR</option>
+              <option value="barcode">Código de Barras (128)</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="crud-modal-footer">
+        <button type="button" class="btn btn-line" id="btn-cancel-print-modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-confirm-print">Generar e Imprimir</button>
+      </div>
     </div>
   </div>
 
