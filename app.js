@@ -9,8 +9,44 @@ const CAT_LABELS = {
   "DEP. ACUM. EQUIPOS DE COMPUTACIONALES Y PERIFERICOS": "Equipos computacionales y periféricos",
   "DEP. ACUM. MUEBLES Y ENSERES": "Muebles y enseres"
 };
-function catLabel(c){ return CAT_LABELS[c] || c || "Sin categoría"; }
+function catLabel(c){
+  const found = adminData.categorias.find(x=>x.key===c);
+  return found ? found.label : (CAT_LABELS[c] || c || "Sin categoría");
+}
+/* ===== Datos administrativos (categorías, ubicaciones, estados, usuarios) ===== */
+let adminData = {
+  categorias: [],
+  ubicaciones: [],
+  estados: [
+    {name:'Operativo', colorClass:'teal'},
+    {name:'En Bodega', colorClass:'amber'},
+    {name:'De Baja', colorClass:'brick'},
+  ],
+  usuarios: []
+};
 
+function mergeAdminDataFromData(){
+  adminData.categorias = [];
+  adminData.ubicaciones = [];
+  adminData.estados = [
+    {name:'Operativo', colorClass:'teal'},
+    {name:'En Bodega', colorClass:'amber'},
+    {name:'De Baja', colorClass:'brick'},
+  ];
+
+  workingData.forEach(r=>{
+    if(r.cat && !adminData.categorias.some(c=>c.key===r.cat)){
+      adminData.categorias.push({key:r.cat, label: CAT_LABELS[r.cat] || r.cat});
+    }
+    if(r.ubicacion && !adminData.ubicaciones.some(u=>u.name===r.ubicacion)){
+      adminData.ubicaciones.push({name:r.ubicacion});
+    }
+    const n = normEstado(r.estado);
+    if(n && !adminData.estados.some(e=>e.name===n)){
+      adminData.estados.push({name:n, colorClass:'slate'});
+    }
+  });
+}
 function normEstado(e){
   if(!e) return null;
   const t = e.trim().toLowerCase();
@@ -21,10 +57,8 @@ function normEstado(e){
 }
 function estadoBadgeClass(e){
   const n = normEstado(e);
-  if(n === "De Baja") return "badge-brick";
-  if(n === "Operativo") return "badge-teal";
-  if(n === "En Bodega") return "badge-amber";
-  return "badge-slate";
+  const found = adminData.estados.find(x=>x.name===n);
+  return found ? `badge-${found.colorClass}` : 'badge-slate';
 }
 
 const CLP = new Intl.NumberFormat('es-CL', {style:'currency', currency:'CLP', maximumFractionDigits:0});
@@ -103,12 +137,9 @@ function populateSelect(id, values, formatter){
 }
 
 function initFilterOptions(){
-  const cats = [...new Set(workingData.map(r=>r.cat).filter(Boolean))].sort();
-  const ubicaciones = [...new Set(workingData.map(r=>r.ubicacion).filter(Boolean))].sort();
-  const estados = [...new Set(workingData.map(r=>normEstado(r.estado)).filter(Boolean))].sort();
-  populateSelect('f-cat', cats, catLabel);
-  populateSelect('f-ubicacion', ubicaciones);
-  populateSelect('f-estado', estados);
+  populateSelect('f-cat', adminData.categorias.map(c=>c.key), catLabel);
+  populateSelect('f-ubicacion', adminData.ubicaciones.map(u=>u.name));
+  populateSelect('f-estado', adminData.estados.map(e=>e.name));
 }
 
 function currentFilters(){
@@ -449,6 +480,7 @@ function mapImportedRows(aoa){
 }
 
 function refreshAll(){
+  mergeAdminDataFromData();
   initFilterOptions();
   renderKPIs();
   renderBarChart();
@@ -503,5 +535,147 @@ document.getElementById('btn-export').addEventListener('click', function(){
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
+/* ===== Sidebar ===== */
+document.getElementById('btn-open-sidebar').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-scrim').classList.add('open');
+});
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-scrim').classList.remove('open');
+}
+document.getElementById('sidebar-scrim').addEventListener('click', closeSidebar);
 
+document.querySelectorAll('.sidebar-link').forEach(link=>{
+  link.addEventListener('click', ()=>{
+    const view = link.dataset.view;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+view).classList.add('active');
+    document.querySelectorAll('.sidebar-link').forEach(a=>a.classList.remove('active'));
+    link.classList.add('active');
+    if(view==='categorias') renderCategorias();
+    if(view==='ubicaciones') renderUbicaciones();
+    if(view==='estados') renderEstados();
+    if(view==='usuarios') renderUsuarios();
+    closeSidebar();
+  });
+});
+
+/* ===== CRUD: Categorías ===== */
+function renderCategorias(){
+  document.getElementById('tbody-categorias').innerHTML = adminData.categorias.map((c,i)=>`
+    <tr>
+      <td class="mono">${c.key}</td>
+      <td>${c.label}</td>
+      <td><button class="btn btn-line btn-sm" onclick="eliminarCategoria(${i})">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+function eliminarCategoria(i){
+  const cat = adminData.categorias[i];
+  if(workingData.some(r=>r.cat===cat.key)){
+    alert('No se puede eliminar: hay bienes registrados con esta categoría.');
+    return;
+  }
+  adminData.categorias.splice(i,1);
+  renderCategorias();
+  initFilterOptions();
+}
+document.getElementById('form-categoria').addEventListener('submit', function(e){
+  e.preventDefault();
+  const key = document.getElementById('cat-key').value.trim();
+  const label = document.getElementById('cat-label').value.trim();
+  if(adminData.categorias.some(c=>c.key===key)){ alert('Ya existe una categoría con ese código.'); return; }
+  adminData.categorias.push({key, label});
+  this.reset();
+  renderCategorias();
+  initFilterOptions();
+});
+
+/* ===== CRUD: Ubicaciones ===== */
+function renderUbicaciones(){
+  document.getElementById('tbody-ubicaciones').innerHTML = adminData.ubicaciones.map((u,i)=>`
+    <tr>
+      <td>${u.name}</td>
+      <td><button class="btn btn-line btn-sm" onclick="eliminarUbicacion(${i})">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+function eliminarUbicacion(i){
+  const u = adminData.ubicaciones[i];
+  if(workingData.some(r=>r.ubicacion===u.name)){
+    alert('No se puede eliminar: hay bienes registrados en esta ubicación.');
+    return;
+  }
+  adminData.ubicaciones.splice(i,1);
+  renderUbicaciones();
+  initFilterOptions();
+}
+document.getElementById('form-ubicacion').addEventListener('submit', function(e){
+  e.preventDefault();
+  const name = document.getElementById('ubi-name').value.trim();
+  if(adminData.ubicaciones.some(u=>u.name===name)){ alert('Esa ubicación ya existe.'); return; }
+  adminData.ubicaciones.push({name});
+  this.reset();
+  renderUbicaciones();
+  initFilterOptions();
+});
+
+/* ===== CRUD: Estados ===== */
+function renderEstados(){
+  document.getElementById('tbody-estados').innerHTML = adminData.estados.map((e,i)=>`
+    <tr>
+      <td>${e.name}</td>
+      <td><span class="badge badge-${e.colorClass}">${e.name}</span></td>
+      <td><button class="btn btn-line btn-sm" onclick="eliminarEstado(${i})">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+function eliminarEstado(i){
+  const e = adminData.estados[i];
+  if(workingData.some(r=>normEstado(r.estado)===e.name)){
+    alert('No se puede eliminar: hay bienes con este estado.');
+    return;
+  }
+  adminData.estados.splice(i,1);
+  renderEstados();
+  initFilterOptions();
+  renderDonut();
+}
+document.getElementById('form-estado').addEventListener('submit', function(e){
+  e.preventDefault();
+  const name = document.getElementById('estado-name').value.trim();
+  const colorClass = document.getElementById('estado-color').value;
+  if(adminData.estados.some(x=>x.name===name)){ alert('Ese estado ya existe.'); return; }
+  adminData.estados.push({name, colorClass});
+  this.reset();
+  renderEstados();
+  initFilterOptions();
+});
+
+/* ===== CRUD: Usuarios (stub, sin backend) ===== */
+function renderUsuarios(){
+  document.getElementById('tbody-usuarios').innerHTML = adminData.usuarios.map((u,i)=>`
+    <tr>
+      <td>${u.nombre}</td>
+      <td>${u.correo}</td>
+      <td>${u.rol}</td>
+      <td><button class="btn btn-line btn-sm" onclick="eliminarUsuario(${i})">Eliminar</button></td>
+    </tr>
+  `).join('');
+}
+function eliminarUsuario(i){
+  adminData.usuarios.splice(i,1);
+  renderUsuarios();
+}
+document.getElementById('form-usuario').addEventListener('submit', function(e){
+  e.preventDefault();
+  adminData.usuarios.push({
+    nombre: document.getElementById('usr-nombre').value.trim(),
+    correo: document.getElementById('usr-correo').value.trim(),
+    rol: document.getElementById('usr-rol').value,
+  });
+  this.reset();
+  renderUsuarios();
+});
 refreshAll();
