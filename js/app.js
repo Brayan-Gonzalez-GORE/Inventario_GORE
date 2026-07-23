@@ -921,12 +921,6 @@ document.getElementById('file-input').addEventListener('change', function (e) {
   reader.readAsBinaryString(file);
   e.target.value = '';
 });
-
-document.getElementById('btn-restore').addEventListener('click', function () {
-  workingData = DATA.slice();
-  refreshAll();
-});
-
 /* ===== Exportar CSV filtrado ===== */
 document.getElementById('btn-export').addEventListener('click', function () {
   const headers = ['ID', 'Categoría', 'Detalle', 'RUT', 'Valor compra', 'Meses vida útil', 'Dep. 2025', 'Valor libro', 'Año baja', 'Ubicación', 'Estado', 'Responsable'];
