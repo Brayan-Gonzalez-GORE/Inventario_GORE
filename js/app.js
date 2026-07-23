@@ -695,6 +695,15 @@ function closeSidebar(){
 }
 document.getElementById('sidebar-scrim').addEventListener('click', closeSidebar);
 
+document.addEventListener('click', function(e) {
+  const btnToggle = document.getElementById('btn-open-sidebar');
+  if (dashboardShell.classList.contains('sidebar-open')) {
+    if (!sidebar.contains(e.target) && !btnToggle.contains(e.target) && !sidebarScrim.contains(e.target)) {
+      closeSidebar();
+    }
+  }
+});
+
 document.querySelectorAll('.sidebar-link').forEach(link=>{
   link.addEventListener('click', ()=>{
     const view = link.dataset.view;
