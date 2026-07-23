@@ -176,7 +176,7 @@
           </div>
           <div class="field grow">
             <label>Detalle exacto de la ubicación</label>
-            <input type="text" id="ubi-name" placeholder="Ej: Oficina 301, Bodega..." required>
+            <input type="text" id="ubi-name" list="detalles-list" placeholder="Ej: Oficina 301, Bodega..." required>
           </div>
           <button class="btn btn-primary btn-sm" type="submit" style="margin-bottom:2px;">+ Agregar</button>
         </form>
@@ -379,6 +379,43 @@
       <button type="button" class="btn btn-primary" id="btn-save-baja" style="background:var(--amber); border-color:var(--amber); color:white;">Procesar Baja</button>
     </div>
 </div>
+
+<div class="crud-modal-scrim" id="edit-ubi-modal-scrim"></div>
+<div class="crud-modal" id="edit-ubi-modal" aria-hidden="true" style="max-width: 600px;">
+  <div class="crud-modal-header">
+    <h2 id="edit-ubi-modal-title">Mover / Editar Ubicación</h2>
+    <button class="crud-modal-close" id="btn-close-edit-ubi">✕</button>
+  </div>
+  <div class="crud-modal-body">
+    <form id="edit-ubi-form">
+      <input type="hidden" id="edit-ubi-oldname">
+      <input type="hidden" id="edit-ubi-gidx">
+      <input type="hidden" id="edit-ubi-oidx">
+      <div class="form-section">
+        <div class="form-grid" style="gap:24px;">
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>División / Repartición</label>
+            <select id="edit-ubi-division" required></select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Departamento / Unidad</label>
+            <select id="edit-ubi-depto" required disabled></select>
+          </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Detalle exacto de la ubicación</label>
+            <input type="text" id="edit-ubi-name" list="detalles-list" required>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="crud-modal-footer">
+    <button type="button" class="btn btn-line" id="btn-cancel-edit-ubi">Cancelar</button>
+    <button type="button" class="btn btn-primary" id="btn-save-edit-ubi">Guardar Cambios</button>
+  </div>
+</div>
+
+<datalist id="detalles-list"></datalist>
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
