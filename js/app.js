@@ -2515,12 +2515,6 @@ function initScanner() {
       },
       formatsToSupport: formatosSoportados,
       showTorchButtonIfSupported: true,
-      videoConstraints: {
-        facingMode: "environment",
-        width: { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-        focusMode: "continuous"
-      },
       experimentalFeatures: {
         useBarCodeDetectorIfSupported: true
       }
