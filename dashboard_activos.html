@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
+<body>
 <div class="sidebar-scrim" id="sidebar-scrim"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-head">
@@ -24,7 +25,6 @@
     <a class="sidebar-link" data-view="usuarios"><span class="ico">05</span> Usuarios</a>
   </nav>
 </aside>
-<body>
 <div class="topbar">
   
   <div class="topbar-inner">
@@ -47,6 +47,91 @@
 
 <main id="view-dashboard" class="view active">
   <section class="kpi-grid" id="kpi-grid" aria-label="Indicadores generales"></section>
+  <section class="charts-row">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
+      </div>
+      <div class="panel-body">
+        <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220" preserveAspectRatio="xMinYMin meet"></svg>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
+      </div>
+      <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
+        <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
+        <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
+      <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
+    </div>
+    <div class="panel-body">
+      <div class="filters">
+        <div class="field grow">
+          <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
+          <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
+        </div>
+        <div class="field">
+          <label for="f-cat">Categoría contable</label>
+          <select id="f-cat"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label for="f-ubicacion">Ubicación</label>
+          <select id="f-ubicacion"><option value="">Todas</option></select>
+        </div>
+        <div class="field">
+          <label for="f-estado">Estado inventario</label>
+          <select id="f-estado"><option value="">Todos</option></select>
+        </div>
+        <div class="checkfield">
+          <input type="checkbox" id="f-baja">
+          <label for="f-baja">Solo dados de baja</label>
+        </div>
+      </div>
+      <div class="filters-meta">
+        <span id="filter-summary"></span>
+        <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="thead-row"></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty-state" class="empty-state" style="display:none;">
+      <h3>Sin resultados</h3>
+      <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
+    </div>
+    <div class="pagination">
+      <span id="page-info"></span>
+      <div class="page-btns">
+        <button id="page-first">« Primera</button>
+        <button id="page-prev">‹ Anterior</button>
+        <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+        <button id="page-next">Siguiente ›</button>
+        <button id="page-last">Última »</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
 <div id="view-categorias" class="view">
   <section class="panel">
     <div class="panel-head">
@@ -132,90 +217,6 @@
     </div>
   </section>
 </div>
-  <section class="charts-row">
-    <div class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title"><span class="idx">01</span> Valor libro por categoría contable</h2>
-      </div>
-      <div class="panel-body">
-        <svg id="chart-bars" width="100%" height="220" viewBox="0 0 640 220" preserveAspectRatio="xMinYMin meet"></svg>
-      </div>
-    </div>
-    <div class="panel">
-      <div class="panel-head">
-        <h2 class="panel-title"><span class="idx">02</span> Estado del inventario físico</h2>
-      </div>
-      <div class="panel-body" style="display:flex; gap:16px; align-items:center;">
-        <svg id="chart-donut" width="140" height="140" viewBox="0 0 140 140" style="flex-shrink:0;"></svg>
-        <ul class="chart-legend" id="donut-legend" style="flex:1;"></ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title"><span class="idx">03</span> Filtros de búsqueda</h2>
-      <span id="filter-count" style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);"></span>
-    </div>
-    <div class="panel-body">
-      <div class="filters">
-        <div class="field grow">
-          <label for="f-search">Buscar (detalle, RUT, serie, ID)</label>
-          <input type="text" id="f-search" placeholder="Ej: notebook, 76.158.484-7, S1H03YCX…">
-        </div>
-        <div class="field">
-          <label for="f-cat">Categoría contable</label>
-          <select id="f-cat"><option value="">Todas</option></select>
-        </div>
-        <div class="field">
-          <label for="f-ubicacion">Ubicación</label>
-          <select id="f-ubicacion"><option value="">Todas</option></select>
-        </div>
-        <div class="field">
-          <label for="f-estado">Estado inventario</label>
-          <select id="f-estado"><option value="">Todos</option></select>
-        </div>
-        <div class="checkfield">
-          <input type="checkbox" id="f-baja">
-          <label for="f-baja">Solo dados de baja</label>
-        </div>
-      </div>
-      <div class="filters-meta">
-        <span id="filter-summary"></span>
-        <button class="link-reset" id="btn-clear-filters">Limpiar filtros</button>
-      </div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-head">
-      <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
-    </div>
-    <div class="table-scroll">
-      <table>
-        <thead>
-          <tr id="thead-row"></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-    <div id="empty-state" class="empty-state" style="display:none;">
-      <h3>Sin resultados</h3>
-      <p>Ningún bien coincide con los filtros aplicados. Prueba ajustando la búsqueda o limpiando los filtros.</p>
-    </div>
-    <div class="pagination">
-      <span id="page-info"></span>
-      <div class="page-btns">
-        <button id="page-first">« Primera</button>
-        <button id="page-prev">‹ Anterior</button>
-        <span id="page-current" style="font-family:var(--mono); padding:0 4px;"></span>
-        <button id="page-next">Siguiente ›</button>
-        <button id="page-last">Última »</button>
-      </div>
-    </div>
-  </section>
-
-</main>
 
 <footer>Base de datos: registro patrimonial interno · Cifras en pesos chilenos (CLP) · v0.1 — panel de partida para el sistema completo</footer>
 
