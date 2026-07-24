@@ -795,6 +795,28 @@ function openFicha(id) {
   ]);
   if (r.obsInv) html += `<div class="ficha-note">${r.obsInv}</div>`;
 
+  if (r.historialMovimientos && r.historialMovimientos.length > 0) {
+    let histHtml = '<div class="ficha-rows" style="display:flex; flex-direction:column; gap:8px;">';
+    r.historialMovimientos.slice().reverse().forEach((m, idx) => {
+      const d = new Date(m.fecha);
+      const ds = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      histHtml += `
+      <div style="background:var(--slate-50); padding:12px; border-radius:6px; border:1px solid var(--slate-200); font-size:13px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <strong style="color:var(--slate-800)">${ds}</strong>
+          <span style="color:var(--slate-500)">Por: ${m.usuario || 'Sistema'}</span>
+        </div>
+        <div style="color:var(--slate-600)">
+          De: <strong>${m.deUbicacion}</strong><br>
+          A: <strong>${m.aUbicacion}</strong>
+        </div>
+      </div>
+      `;
+    });
+    histHtml += '</div>';
+    html += `<div class="ficha-section"><p class="ficha-section-title">Historial de Movimientos (Auditoría)</p>${histHtml}</div>`;
+  }
+
   body.innerHTML = html;
 
   const btnBaja = document.getElementById('btn-baja-asset');
@@ -1752,6 +1774,10 @@ function populateSelects() {
   const estSelect = document.getElementById('crud-estado');
   if (estSelect) estSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
     adminData.estados.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+
+  const usrSelect = document.getElementById('crud-usuario-movimiento');
+  if (usrSelect) usrSelect.innerHTML = '<option value="Sistema">Sistema</option>' +
+    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
 }
 
 function actualizarUbicacionOculta() {
@@ -2012,7 +2038,15 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
     obsInv: str(document.getElementById('crud-obsInv').value)
   };
 
+  const usuarioMovimiento = document.getElementById('crud-usuario-movimiento') ? document.getElementById('crud-usuario-movimiento').value : 'Sistema';
+
   if (isNew) {
+    asset.historialMovimientos = [{
+      fecha: new Date().toISOString(),
+      usuario: usuarioMovimiento,
+      deUbicacion: 'Nuevo Registro',
+      aUbicacion: asset.ubicacion || 'Sin asignar'
+    }];
     workingData.unshift(asset); // Add to beginning
   } else {
     const idx = workingData.findIndex(x => x.id === id);
@@ -2025,6 +2059,17 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
       asset.vidaBaja = old.vidaBaja;
       asset.depBaja = old.depBaja;
       asset.valorBaja = old.valorBaja;
+      
+      asset.historialMovimientos = old.historialMovimientos || [];
+      if (old.ubicacion !== asset.ubicacion) {
+        asset.historialMovimientos.push({
+          fecha: new Date().toISOString(),
+          usuario: usuarioMovimiento,
+          deUbicacion: old.ubicacion || 'Sin asignar',
+          aUbicacion: asset.ubicacion || 'Sin asignar'
+        });
+      }
+      
       workingData[idx] = asset;
     }
   }
@@ -2285,6 +2330,10 @@ function openBulkMoveModal() {
 
   depSelect.onchange = actualizarBulkUbicacionOculta;
 
+  const bulkUsrSelect = document.getElementById('bulk-usuario-movimiento');
+  if (bulkUsrSelect) bulkUsrSelect.innerHTML = '<option value="Sistema">Sistema</option>' +
+    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
+
   if (bulkMoveScrim) bulkMoveScrim.classList.add('open');
   if (bulkMoveModal) bulkMoveModal.setAttribute('aria-hidden', 'false');
   document.body.style.overflow = 'hidden';
@@ -2334,12 +2383,24 @@ document.getElementById('btn-save-bulk-move')?.addEventListener('click', () => {
     return;
   }
 
+  const bulkUsuario = document.getElementById('bulk-usuario-movimiento') ? document.getElementById('bulk-usuario-movimiento').value : 'Sistema';
+
   workingData.forEach(r => {
     if (selectedIds.has(r.id)) {
+      if (r.ubicacion !== newUbicacion) {
+        r.historialMovimientos = r.historialMovimientos || [];
+        r.historialMovimientos.push({
+          fecha: new Date().toISOString(),
+          usuario: bulkUsuario,
+          deUbicacion: r.ubicacion || 'Sin asignar',
+          aUbicacion: newUbicacion
+        });
+      }
       r.ubicacion = newUbicacion;
     }
   });
 
+  saveWorkingData();
   selectedIds.clear();
   closeBulkMoveModal();
   refreshAll();
