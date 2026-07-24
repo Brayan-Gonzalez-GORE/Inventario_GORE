@@ -1442,7 +1442,19 @@ window.abrirTreeModal = function (action, tipo, id = null) {
   document.getElementById('tree-action').value = action; // 'crear' o 'editar'
   document.getElementById('tree-target-id').value = id || '';
 
-  document.getElementById('tree-modal-title').textContent = action === 'crear' ? 'Nueva Ubicación' : 'Editar Ubicación';
+  const fieldTipo = document.getElementById('tree-field-tipo');
+  if (action === 'crear') {
+    document.getElementById('tree-modal-title').textContent = 'Nueva Ubicación';
+    if (fieldTipo) fieldTipo.style.display = 'flex';
+  } else {
+    let titleStr = '';
+    if (tipo === 'division') titleStr = 'Editando División / Repartición';
+    else if (tipo === 'unidad') titleStr = 'Editando Departamento / Unidad';
+    else if (tipo === 'dependencia') titleStr = 'Editando Dependencia';
+    document.getElementById('tree-modal-title').textContent = titleStr;
+    if (fieldTipo) fieldTipo.style.display = 'none';
+  }
+
   treeTipoSelect.value = tipo;
   treeTipoSelect.disabled = action === 'editar'; // No cambiar tipo al editar
 
@@ -3669,15 +3681,15 @@ function abrirCrudEditModal(type, title, html, index) {
   currentEditIndex = index;
   document.getElementById('crud-edit-modal-title').textContent = title;
   document.getElementById('crud-edit-fields-container').innerHTML = html;
-  document.getElementById('crud-edit-modal').classList.add('active');
-  document.getElementById('crud-edit-modal-scrim').classList.add('active');
+  document.getElementById('crud-edit-modal').setAttribute('aria-hidden', 'false');
+  document.getElementById('crud-edit-modal-scrim').classList.add('open');
 }
 
 function cerrarCrudEditModal() {
   currentEditType = null;
   currentEditIndex = -1;
-  document.getElementById('crud-edit-modal').classList.remove('active');
-  document.getElementById('crud-edit-modal-scrim').classList.remove('active');
+  document.getElementById('crud-edit-modal').setAttribute('aria-hidden', 'true');
+  document.getElementById('crud-edit-modal-scrim').classList.remove('open');
 }
 
 document.getElementById('btn-close-crud-edit')?.addEventListener('click', cerrarCrudEditModal);

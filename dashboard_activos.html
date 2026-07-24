@@ -871,7 +871,7 @@
         <input type="hidden" id="tree-target-id">
         <div class="form-section">
           <div class="form-grid" style="gap:24px;">
-            <div class="field" style="grid-column: 1 / -1;">
+            <div class="field" style="grid-column: 1 / -1;" id="tree-field-tipo">
               <label>¿Qué deseas registrar/editar?</label>
               <select id="tree-tipo" required>
                 <option value="division">1. División / Repartición</option>
@@ -974,7 +974,7 @@
     </div>
     <div class="crud-modal-body">
       <form id="crud-edit-form" class="admin-form">
-        <div id="crud-edit-fields-container"></div>
+        <div id="crud-edit-fields-container" style="display:flex; flex-direction:column; gap:16px;"></div>
       </form>
     </div>
     <div class="crud-modal-footer">
