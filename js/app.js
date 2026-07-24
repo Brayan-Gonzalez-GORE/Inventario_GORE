@@ -483,10 +483,15 @@ function renderTable() {
 function updateBulkMoveButton() {
   const btn = document.getElementById('btn-bulk-move');
   const btnPrint = document.getElementById('btn-print-qr');
+  const btnMassAssign = document.getElementById('btn-mass-assign-asset');
   if (!btn) return;
   if (selectedIds.size > 0) {
     btn.style.display = 'inline-flex';
     btn.textContent = `Mover Seleccionados (${selectedIds.size})`;
+    if (btnMassAssign) {
+      btnMassAssign.style.display = 'inline-flex';
+      btnMassAssign.textContent = `Asignar Seleccionados (${selectedIds.size})`;
+    }
     if (btnPrint) {
       btnPrint.style.display = 'inline-flex';
       btnPrint.textContent = `Imprimir QRs (${selectedIds.size})`;
@@ -494,6 +499,7 @@ function updateBulkMoveButton() {
   } else {
     btn.style.display = 'none';
     if (btnPrint) btnPrint.style.display = 'none';
+    if (btnMassAssign) btnMassAssign.style.display = 'none';
   }
 }
 
@@ -811,6 +817,10 @@ function openFicha(id) {
     r.historialMovimientos.slice().reverse().forEach((m, idx) => {
       const d = new Date(m.fecha);
       const ds = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      
+      const deFinal = m.deUbicacion ? m.deUbicacion.split(' - ').pop() : 'Sin asignar';
+      const aFinal = m.aUbicacion ? m.aUbicacion.split(' - ').pop() : 'Sin asignar';
+
       histHtml += `
       <div style="background:var(--slate-50); padding:12px; border-radius:6px; border:1px solid var(--slate-200); font-size:13px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -818,8 +828,8 @@ function openFicha(id) {
           <span style="color:var(--slate-500)">Por: ${m.usuario || 'Sistema'}</span>
         </div>
         <div style="color:var(--slate-600)">
-          De: <strong>${m.deUbicacion}</strong><br>
-          A: <strong>${m.aUbicacion}</strong>
+          De: <strong>${deFinal}</strong> ${m.deResponsable ? `(Entregado por: ${m.deResponsable})` : ''}<br>
+          A: <strong>${aFinal}</strong> ${m.aResponsable ? `(Recibido por: ${m.aResponsable})` : ''}
           ${m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : ''}
           ${m.obs ? `<br>Obs: <em>${m.obs}</em>` : ''}
         </div>
@@ -2262,6 +2272,7 @@ document.getElementById('btn-save-assign')?.addEventListener('click', () => {
       usuario: usuarioActivo,
       deUbicacion: oldUbicacion || 'Sin asignar',
       aUbicacion: newUbicacion,
+      aResponsable: responsable,
       documento: documento,
       obs: obs,
       tipo: 'Asignación'
@@ -2422,6 +2433,7 @@ document.getElementById('btn-save-receive')?.addEventListener('click', () => {
       usuario: usuarioActivo,
       deUbicacion: oldUbicacion || 'Sin asignar',
       aUbicacion: newUbicacion,
+      deResponsable: r.responsableAsignacion || '',
       documento: documento,
       obs: obs,
       tipo: 'Recepción'
@@ -2757,6 +2769,159 @@ document.getElementById('btn-save-bulk-move')?.addEventListener('click', () => {
   selectedIds.clear();
   closeBulkMoveModal();
   refreshAll();
+});
+
+/* ===== Mass Assign Logic ===== */
+const massAssignModal = document.getElementById('mass-assign-modal');
+const massAssignScrim = document.getElementById('mass-assign-modal-scrim');
+const massAssignForm = document.getElementById('mass-assign-form');
+
+function openMassAssignModal() {
+  if (selectedIds.size === 0) return;
+  document.getElementById('mass-assign-count-text').textContent = `Estás a punto de asignar ${selectedIds.size} bienes.`;
+  massAssignForm.reset();
+
+  const divSelect = document.getElementById('mass-assign-ubi-division');
+  const uniSelect = document.getElementById('mass-assign-ubi-unidad');
+  const depSelect = document.getElementById('mass-assign-ubi-dependencia');
+
+  divSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+    adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+  uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+  uniSelect.disabled = true;
+  depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+  depSelect.disabled = true;
+  document.getElementById('mass-assign-ubicacion').value = '';
+
+  const updateMassUbi = () => {
+    const divId = divSelect.value;
+    const uniId = uniSelect.value;
+    const depId = depSelect.value;
+    let ubiStr = '';
+    if (divId) {
+      const d = adminData.divisiones.find(x => x.id === divId);
+      if (d) {
+        ubiStr = d.nombre;
+        if (uniId) {
+          const u = d.unidades.find(x => x.id === uniId);
+          if (u) {
+            ubiStr += ' - ' + u.nombre;
+            if (depId) {
+              const dep = u.dependencias.find(x => x.id === depId);
+              if (dep) ubiStr += ' - ' + dep.nombre;
+            }
+          }
+        }
+      }
+    }
+    document.getElementById('mass-assign-ubicacion').value = ubiStr;
+  };
+
+  divSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === this.value);
+    if (d) {
+      uniSelect.innerHTML = '<option value="">-- Seleccione Unidad --</option>' +
+        d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+      uniSelect.disabled = false;
+    } else {
+      uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+      uniSelect.disabled = true;
+    }
+    depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+    depSelect.disabled = true;
+    updateMassUbi();
+  };
+
+  uniSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === divSelect.value);
+    const u = d ? d.unidades.find(x => x.id === this.value) : null;
+    if (u && u.dependencias.length > 0) {
+      depSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+        u.dependencias.map(dep => `<option value="${dep.id}">${dep.nombre}</option>`).join('');
+      depSelect.disabled = false;
+    } else {
+      depSelect.innerHTML = '<option value="">-- Sin dependencias --</option>';
+      depSelect.disabled = true;
+    }
+    updateMassUbi();
+  };
+
+  depSelect.onchange = updateMassUbi;
+
+  massAssignScrim.classList.add('open');
+  massAssignModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMassAssignModal() {
+  massAssignScrim.classList.remove('open');
+  massAssignModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-mass-assign-asset')?.addEventListener('click', openMassAssignModal);
+document.getElementById('btn-cancel-mass-assign')?.addEventListener('click', closeMassAssignModal);
+document.getElementById('btn-close-mass-assign')?.addEventListener('click', closeMassAssignModal);
+massAssignScrim?.addEventListener('click', closeMassAssignModal);
+
+document.getElementById('btn-save-mass-assign')?.addEventListener('click', () => {
+  if (!massAssignForm.checkValidity()) {
+    massAssignForm.reportValidity();
+    return;
+  }
+
+  const responsable = document.getElementById('mass-assign-responsable').value.trim();
+  const documento = document.getElementById('mass-assign-documento').value.trim();
+  const obs = document.getElementById('mass-assign-obs').value.trim();
+  const newUbicacion = document.getElementById('mass-assign-ubicacion').value;
+
+  if (!newUbicacion) {
+    alert("Por favor seleccione una ubicación válida.");
+    return;
+  }
+
+  const globalUsr = document.getElementById('global-usuario-activo');
+  const usuarioActivo = (globalUsr && globalUsr.value) ? globalUsr.value : 'Sistema';
+  
+  let count = 0;
+  let ignorados = 0;
+
+  workingData.forEach(r => {
+    if (selectedIds.has(r.id)) {
+      if (normEstado(r.estado) === 'De Baja') {
+        ignorados++;
+        return;
+      }
+      
+      const oldUbicacion = r.ubicacion;
+      r.ubicacion = newUbicacion;
+      r.estado = 'Asignado';
+      r.responsableAsignacion = responsable;
+      r.documentoAsignacion = documento;
+
+      r.historialMovimientos = r.historialMovimientos || [];
+      r.historialMovimientos.push({
+        fecha: new Date().toISOString(),
+        usuario: usuarioActivo,
+        deUbicacion: oldUbicacion || 'Sin asignar',
+        aUbicacion: newUbicacion,
+        aResponsable: responsable,
+        documento: documento,
+        obs: obs,
+        tipo: 'Asignación'
+      });
+      count++;
+    }
+  });
+
+  saveWorkingData();
+  selectedIds.clear();
+  closeMassAssignModal();
+  refreshAll();
+  
+  let msg = `Se han asignado ${count} bienes correctamente.`;
+  if (ignorados > 0) msg += `\nSe ignoraron ${ignorados} bienes que estaban "De Baja".`;
+  alert(msg);
 });
 
 /* ===== Escáner QR ===== */

@@ -188,8 +188,8 @@
           <div class="panel-head">
             <h2 class="panel-title"><span class="idx">04</span> Registro de bienes</h2>
             <div style="display: flex; gap: 8px;">
-              <button class="btn btn-secondary btn-sm" id="btn-bulk-move" style="display:none;">Mover Seleccionados
-                (0)</button>
+              <button class="btn btn-secondary btn-sm" id="btn-mass-assign-asset" style="display:none; background: var(--teal); border-color: var(--teal); color: white;">Asignar Seleccionados (0)</button>
+              <button class="btn btn-secondary btn-sm" id="btn-bulk-move" style="display:none;">Mover Seleccionados (0)</button>
               <button class="btn btn-secondary btn-sm" id="btn-print-qr" style="display:none;">Imprimir Etiquetas
                 QR</button>
               <button class="btn btn-primary btn-sm" id="btn-new-asset">+ Nuevo Bien</button>
@@ -726,6 +726,36 @@
     <div class="crud-modal-footer">
       <button type="button" class="btn btn-line" id="btn-cancel-receive">Cancelar</button>
       <button type="button" class="btn btn-primary" id="btn-save-receive" style="background: var(--amber); border-color: var(--amber);">Guardar Recepción</button>
+    </div>
+  </div>
+
+  <!-- MODAL ASIGNACION MASIVA -->
+  <div class="crud-modal-scrim" id="mass-assign-modal-scrim"></div>
+  <div class="crud-modal" id="mass-assign-modal" aria-hidden="true" style="max-width: 500px;">
+    <div class="crud-modal-header">
+      <h2 id="mass-assign-modal-title">Asignación Masiva</h2>
+      <button class="crud-modal-close" id="btn-close-mass-assign">×</button>
+    </div>
+    <div class="crud-modal-body">
+      <p id="mass-assign-count-text" style="margin-bottom: 16px; font-weight: 500; color: var(--teal);"></p>
+      <form id="mass-assign-form">
+        <div class="form-section">
+          <div class="field"><label>A quién se entregan (Responsable)</label><input type="text" id="mass-assign-responsable" required placeholder="Nombre completo"></div>
+          
+          <div class="field" style="margin-top: 16px;"><label>División / Repartición destino</label><select id="mass-assign-ubi-division" required></select></div>
+          <div class="field"><label>Departamento / Unidad destino</label><select id="mass-assign-ubi-unidad" required disabled></select></div>
+          <div class="field"><label>Dependencia destino</label><select id="mass-assign-ubi-dependencia" required disabled><option value="">-- Seleccione --</option></select></div>
+          <input type="hidden" id="mass-assign-ubicacion">
+  
+          <div class="field" style="margin-top: 16px;"><label>Documento de Traspaso (Ref.)</label><input type="text" id="mass-assign-documento" placeholder="Ej: Acta N° 1234, Enlace a PDF..."></div>
+          
+          <div class="field"><label>Observaciones Masivas (Opcional)</label><input type="text" id="mass-assign-obs"></div>
+        </div>
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-mass-assign">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-mass-assign" style="background: var(--teal); border-color: var(--teal);">Guardar Asignación Múltiple</button>
     </div>
   </div>
 
