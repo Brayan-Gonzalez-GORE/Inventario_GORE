@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -36,6 +36,8 @@
             class="label">Dashboard</span></a>
         <a class="sidebar-link" data-view="categorias"><span class="ico">02</span><span class="label">Categorías
             contables</span></a>
+        <a class="sidebar-link" data-view="tipos-bien"><span class="ico">📋</span><span class="label">Tipos de
+            bien</span></a>
         <a class="sidebar-link" data-view="ubicaciones"><span class="ico">03</span><span
             class="label">Ubicaciones</span></a>
         <a class="sidebar-link" data-view="estados"><span class="ico">04</span><span class="label">Estados de
@@ -113,6 +115,12 @@
                 <label for="f-cat">Categoría contable</label>
                 <select id="f-cat">
                   <option value="">Todas</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-tipo-bien">Tipo de bien</label>
+                <select id="f-tipo-bien">
+                  <option value="">Todos</option>
                 </select>
               </div>
               <div class="field">
@@ -385,6 +393,53 @@
               <span id="cat-page-current" style="font-family:var(--mono); padding:0 4px;"></span>
               <button id="cat-page-next">Siguiente ›</button>
               <button id="cat-page-last">Última »</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div id="view-tipos-bien" class="view">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">Tipos de bien</h2>
+          </div>
+          <form class="admin-form" id="form-tipo-bien">
+            <div class="field"><label>Código</label><input type="text" id="tipo-bien-key" placeholder="Ej: 29.03" required></div>
+            <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="tipo-bien-label" placeholder="Ej: Vehículos" required></div>
+            <button class="btn btn-primary btn-sm" type="submit">+ Agregar</button>
+          </form>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Etiqueta</th>
+                  <th style="width:100px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-tipos-bien"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+              <span id="tipo-bien-page-info"></span>
+              <div style="display:inline-flex; align-items:center; gap:6px;">
+                <label for="tipo-bien-page-size" style="font-size:12px; color:var(--ink-soft);">Mostrar:</label>
+                <select id="tipo-bien-page-size"
+                  style="font-size:12px; padding:4px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--white); color:var(--ink); font-family:var(--sans); cursor:pointer;">
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+            <div class="page-btns">
+              <button id="tipo-bien-page-first">« Primera</button>
+              <button id="tipo-bien-page-prev">‹ Anterior</button>
+              <span id="tipo-bien-page-current" style="font-family:var(--mono); padding:0 4px;"></span>
+              <button id="tipo-bien-page-next">Siguiente ›</button>
+              <button id="tipo-bien-page-last">Última »</button>
             </div>
           </div>
         </section>
@@ -876,7 +931,7 @@
         <div class="field"><label>Dependencia (Opcional)</label><select id="bulk-ubi-dependencia" disabled>
             <option value="">-- Ninguna --</option>
           </select></div>
-        <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="bulk-usuario-movimiento" disabled></div>
+          <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="bulk-usuario-movimiento" disabled></div>
         <input type="hidden" id="bulk-ubicacion">
       </form>
     </div>
@@ -908,6 +963,23 @@
         <button type="button" class="btn btn-line" id="btn-cancel-print-modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="btn-confirm-print">Generar e Imprimir</button>
       </div>
+    </div>
+  </div>
+
+  <div class="crud-modal-scrim" id="crud-edit-modal-scrim"></div>
+  <div class="crud-modal" id="crud-edit-modal" aria-hidden="true" style="max-width: 400px;">
+    <div class="crud-modal-header">
+      <h3 id="crud-edit-modal-title">Editar</h3>
+      <button class="crud-modal-close" id="btn-close-crud-edit" aria-label="Cerrar modal">✕</button>
+    </div>
+    <div class="crud-modal-body">
+      <form id="crud-edit-form" class="admin-form">
+        <div id="crud-edit-fields-container"></div>
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-crud-edit">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-crud-edit">Guardar Cambios</button>
     </div>
   </div>
 

@@ -14,6 +14,12 @@ function catLabel(c) {
   return found ? found.label : (CAT_LABELS[c] || c || "Sin categoría");
 }
 
+function tipoBienLabel(c) {
+  if (!adminData.tiposBien) return c || "Sin tipo";
+  const found = adminData.tiposBien.find(x => x.key === c);
+  return found ? found.label : (c || "Sin tipo");
+}
+
 const ORGANIGRAMA = [
   {
     group: 'Gobernador Regional y Directos',
@@ -96,6 +102,7 @@ const ORGANIGRAMA = [
 /* ===== Datos administrativos (categorías, ubicaciones, estados, usuarios) ===== */
 let adminData = {
   categorias: [],
+  tiposBien: [],
   ubicaciones: [],
   estados: [
     { name: 'Operativo', colorClass: 'teal' },
@@ -123,6 +130,7 @@ function saveAdminData() {
 function mergeAdminDataFromData() {
   if (!loadAdminData()) {
     adminData.categorias = [];
+    adminData.tiposBien = [];
     adminData.ubicaciones = ORGANIGRAMA.map(g => ({ group: g.group, options: [...g.options] }));
     adminData.estados = [
       { name: 'Operativo', colorClass: 'teal' },
@@ -152,9 +160,14 @@ function mergeAdminDataFromData() {
 
   const historico = new Set();
 
+  if (!adminData.tiposBien) adminData.tiposBien = [];
+
   workingData.forEach(r => {
     if (r.cat && !adminData.categorias.some(c => c.key === r.cat)) {
       adminData.categorias.push({ key: r.cat, label: CAT_LABELS[r.cat] || r.cat });
+    }
+    if (r.tipoBien && !adminData.tiposBien.some(tb => tb.key === r.tipoBien)) {
+      adminData.tiposBien.push({ key: r.tipoBien, label: r.tipoBien });
     }
     if (r.ubicacion && !allUbis.has(r.ubicacion)) {
       historico.add(r.ubicacion);
@@ -364,6 +377,7 @@ function populateSelect(id, values, formatter) {
 
 function initFilterOptions() {
   populateSelect('f-cat', adminData.categorias.map(c => c.key), catLabel);
+  if (adminData.tiposBien) populateSelect('f-tipo-bien', adminData.tiposBien.map(tb => tb.key), tipoBienLabel);
   populateSelect('f-ubicacion', adminData.ubicaciones);
   populateSelect('f-estado', adminData.estados.map(e => e.name));
   
@@ -376,6 +390,7 @@ function currentFilters() {
   return {
     search: document.getElementById('f-search').value.trim().toLowerCase(),
     cat: document.getElementById('f-cat').value,
+    tipoBien: document.getElementById('f-tipo-bien') ? document.getElementById('f-tipo-bien').value : '',
     ubicacion: document.getElementById('f-ubicacion').value,
     estado: document.getElementById('f-estado').value,
     soloBaja: document.getElementById('f-baja').checked,
@@ -398,6 +413,7 @@ function applyFilters() {
   filtered = workingData.filter(r => {
     if (f.soloBaja && !r.anioBaja) return false;
     if (f.cat && r.cat !== f.cat) return false;
+    if (f.tipoBien && r.tipoBien !== f.tipoBien) return false;
     if (f.ubicacion && r.ubicacion !== f.ubicacion) return false;
     if (f.estado && normEstado(r.estado) !== f.estado) return false;
     if (f.search) {
@@ -1046,6 +1062,7 @@ function switchView(view) {
   if (link) link.classList.add('active');
 
   if (view === 'categorias') renderCategorias();
+  if (view === 'tipos-bien') renderTiposBien();
   if (view === 'ubicaciones') renderUbicaciones();
   if (view === 'estados') renderEstados();
   if (view === 'usuarios') renderUsuarios();
@@ -1070,6 +1087,7 @@ document.querySelectorAll('.sidebar-link').forEach(link => {
 /* ===== CRUD: Categorías ===== */
 let catPage = 1;
 let catPageSize = 10;
+let editingCatIndex = -1;
 
 function renderCategorias() {
   saveAdminData();
@@ -1082,7 +1100,10 @@ function renderCategorias() {
       <tr>
         <td class="mono">${c.key}</td>
         <td>${c.label}</td>
-        <td><button class="btn btn-line btn-sm" onclick="eliminarCategoria(${originalIndex})">Eliminar</button></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-line btn-sm" onclick="editarCategoria(${originalIndex})" style="margin-right: 4px;">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarCategoria(${originalIndex})">Eliminar</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -1130,13 +1151,24 @@ function eliminarCategoria(i) {
   initFilterOptions();
 }
 
+function editarCategoria(i) {
+  const cat = adminData.categorias[i];
+  const html = `
+    <div class="field"><label>Código (cuenta)</label><input type="text" id="edit-cat-key" value="${cat.key}" required></div>
+    <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="edit-cat-label" value="${cat.label}" required></div>
+  `;
+  abrirCrudEditModal('categoria', 'Editar Categoría contable', html, i);
+}
+
 document.getElementById('form-categoria').addEventListener('submit', function (e) {
   e.preventDefault();
   const key = document.getElementById('cat-key').value.trim();
   const label = document.getElementById('cat-label').value.trim();
+  
   if (adminData.categorias.some(c => c.key === key)) { alert('Ya existe una categoría con ese código.'); return; }
   adminData.categorias.push({ key, label });
   this.reset();
+  
   catPage = 1;
   renderCategorias();
   initFilterOptions();
@@ -1186,6 +1218,106 @@ function renderDatalistDetalles() {
       .join('');
   }
 }
+
+/* ===== CRUD: Tipos de Bien ===== */
+let tipoBienPage = 1;
+let tipoBienPageSize = 10;
+let editingTipoBienIndex = -1;
+
+function renderTiposBien() {
+  saveAdminData();
+  const start = (tipoBienPage - 1) * tipoBienPageSize;
+  const pageItems = adminData.tiposBien.slice(start, start + tipoBienPageSize);
+
+  document.getElementById('tbody-tipos-bien').innerHTML = pageItems.map((c) => {
+    const originalIndex = adminData.tiposBien.indexOf(c);
+    return `
+      <tr>
+        <td class="mono">${c.key}</td>
+        <td>${c.label}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-line btn-sm" onclick="editarTipoBien(${originalIndex})" style="margin-right: 4px;">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarTipoBien(${originalIndex})">Eliminar</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  renderTipoBienPagination();
+}
+
+function renderTipoBienPagination() {
+  const total = adminData.tiposBien.length;
+  const totalPages = Math.max(1, Math.ceil(total / tipoBienPageSize));
+  tipoBienPage = Math.min(tipoBienPage, totalPages);
+
+  const infoEl = document.getElementById('tipo-bien-page-info');
+  if (infoEl) {
+    if (total === 0) infoEl.textContent = 'Sin resultados';
+    else {
+      const start = (tipoBienPage - 1) * tipoBienPageSize + 1;
+      const end = Math.min(tipoBienPage * tipoBienPageSize, total);
+      infoEl.textContent = `Tipos de bien ${start}-${end} de ${total}`;
+    }
+  }
+
+  const curEl = document.getElementById('tipo-bien-page-current');
+  if (curEl) curEl.textContent = `Pág. ${tipoBienPage} / ${totalPages}`;
+
+  const btnFirst = document.getElementById('tipo-bien-page-first');
+  const btnPrev = document.getElementById('tipo-bien-page-prev');
+  const btnNext = document.getElementById('tipo-bien-page-next');
+  const btnLast = document.getElementById('tipo-bien-page-last');
+
+  if (btnFirst) btnFirst.disabled = tipoBienPage <= 1;
+  if (btnPrev) btnPrev.disabled = tipoBienPage <= 1;
+  if (btnNext) btnNext.disabled = tipoBienPage >= totalPages;
+  if (btnLast) btnLast.disabled = tipoBienPage >= totalPages;
+}
+
+function eliminarTipoBien(i) {
+  const tipo = adminData.tiposBien[i];
+  if (workingData.some(r => r.tipoBien === tipo.key)) {
+    alert('No se puede eliminar: hay bienes registrados con este tipo.');
+    return;
+  }
+  adminData.tiposBien.splice(i, 1);
+  renderTiposBien();
+  initFilterOptions();
+}
+
+function editarTipoBien(i) {
+  const tipo = adminData.tiposBien[i];
+  const html = `
+    <div class="field"><label>Código</label><input type="text" id="edit-tipo-bien-key" value="${tipo.key}" required></div>
+    <div class="field grow"><label>Etiqueta a mostrar</label><input type="text" id="edit-tipo-bien-label" value="${tipo.label}" required></div>
+  `;
+  abrirCrudEditModal('tipo-bien', 'Editar Tipo de Bien', html, i);
+}
+
+document.getElementById('form-tipo-bien')?.addEventListener('submit', function (e) {
+  e.preventDefault();
+  const key = document.getElementById('tipo-bien-key').value.trim();
+  const label = document.getElementById('tipo-bien-label').value.trim();
+  
+  if (adminData.tiposBien.some(c => c.key === key)) { alert('Ya existe un tipo de bien con ese código.'); return; }
+  adminData.tiposBien.push({ key, label });
+  this.reset();
+  
+  tipoBienPage = 1;
+  renderTiposBien();
+  initFilterOptions();
+});
+
+document.getElementById('tipo-bien-page-first')?.addEventListener('click', () => { tipoBienPage = 1; renderTiposBien(); });
+document.getElementById('tipo-bien-page-prev')?.addEventListener('click', () => { tipoBienPage = Math.max(1, tipoBienPage - 1); renderTiposBien(); });
+document.getElementById('tipo-bien-page-next')?.addEventListener('click', () => { tipoBienPage++; renderTiposBien(); });
+document.getElementById('tipo-bien-page-last')?.addEventListener('click', () => { tipoBienPage = Math.ceil(adminData.tiposBien.length / tipoBienPageSize); renderTiposBien(); });
+document.getElementById('tipo-bien-page-size')?.addEventListener('change', function () {
+  tipoBienPageSize = Number(this.value) || 10;
+  tipoBienPage = 1;
+  renderTiposBien();
+});
 
 /* ===== CRUD: Ubicaciones (Jerárquico) ===== */
 function renderUbicaciones() {
@@ -1544,6 +1676,7 @@ function renombrarActivosGlobal(tipo, objAntiguo, nuevosDatos) {
 /* ===== CRUD: Estados ===== */
 let estPage = 1;
 let estPageSize = 10;
+let editingEstadoIndex = -1;
 
 function renderEstados() {
   saveAdminData();
@@ -1556,7 +1689,10 @@ function renderEstados() {
       <tr>
         <td>${e.name}</td>
         <td><span class="badge badge-${e.colorClass}">${e.name}</span></td>
-        <td><button class="btn btn-line btn-sm" onclick="eliminarEstado(${originalIndex})">Eliminar</button></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-line btn-sm" onclick="editarEstado(${originalIndex})" style="margin-right: 4px;">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarEstado(${originalIndex})">Eliminar</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -1605,13 +1741,32 @@ function eliminarEstado(i) {
   renderDonut();
 }
 
-document.getElementById('form-estado').addEventListener('submit', function (e) {
+function editarEstado(i) {
+  const est = adminData.estados[i];
+  const html = `
+    <div class="field"><label>Nombre del estado</label><input type="text" id="edit-estado-name" value="${est.name}" required></div>
+    <div class="field">
+      <label>Color de etiqueta</label>
+      <select id="edit-estado-color">
+        <option value="teal" ${est.colorClass === 'teal' ? 'selected' : ''}>Verde (activo/ok)</option>
+        <option value="amber" ${est.colorClass === 'amber' ? 'selected' : ''}>Ámbar (pendiente)</option>
+        <option value="brick" ${est.colorClass === 'brick' ? 'selected' : ''}>Rojo (alerta/baja)</option>
+        <option value="slate" ${est.colorClass === 'slate' ? 'selected' : ''}>Gris (neutro)</option>
+      </select>
+    </div>
+  `;
+  abrirCrudEditModal('estado', 'Editar Estado', html, i);
+}
+
+document.getElementById('form-estado')?.addEventListener('submit', function (e) {
   e.preventDefault();
   const name = document.getElementById('estado-name').value.trim();
   const colorClass = document.getElementById('estado-color').value;
+  
   if (adminData.estados.some(x => x.name === name)) { alert('Ese estado ya existe.'); return; }
   adminData.estados.push({ name, colorClass });
   this.reset();
+  
   estPage = 1;
   renderEstados();
   initFilterOptions();
@@ -1630,6 +1785,7 @@ document.getElementById('est-page-size')?.addEventListener('change', function ()
 /* ===== CRUD: Usuarios ===== */
 let usrPage = 1;
 let usrPageSize = 10;
+let editingUsuarioIndex = -1;
 
 function renderUsuarios() {
   saveAdminData();
@@ -1643,7 +1799,10 @@ function renderUsuarios() {
         <td>${u.nombre}</td>
         <td>${u.correo}</td>
         <td>${u.rol}</td>
-        <td><button class="btn btn-line btn-sm" onclick="eliminarUsuario(${originalIndex})">Eliminar</button></td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-line btn-sm" onclick="editarUsuario(${originalIndex})" style="margin-right: 4px;">Editar</button>
+          <button class="btn btn-line btn-sm" onclick="eliminarUsuario(${originalIndex})">Eliminar</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -1685,14 +1844,32 @@ function eliminarUsuario(i) {
   renderUsuarios();
 }
 
-document.getElementById('form-usuario').addEventListener('submit', function (e) {
+function editarUsuario(i) {
+  const u = adminData.usuarios[i];
+  const html = `
+    <div class="field"><label>Nombre</label><input type="text" id="edit-usr-nombre" value="${u.nombre}" required></div>
+    <div class="field"><label>Correo</label><input type="email" id="edit-usr-correo" value="${u.correo}" required></div>
+    <div class="field">
+      <label>Rol</label>
+      <select id="edit-usr-rol">
+        <option value="Administrador" ${u.rol === 'Administrador' ? 'selected' : ''}>Administrador</option>
+        <option value="Editor" ${u.rol === 'Editor' ? 'selected' : ''}>Editor</option>
+        <option value="Solo lectura" ${u.rol === 'Solo lectura' ? 'selected' : ''}>Solo lectura</option>
+      </select>
+    </div>
+  `;
+  abrirCrudEditModal('usuario', 'Editar Usuario', html, i);
+}
+
+document.getElementById('form-usuario')?.addEventListener('submit', function (e) {
   e.preventDefault();
-  adminData.usuarios.push({
-    nombre: document.getElementById('usr-nombre').value.trim(),
-    correo: document.getElementById('usr-correo').value.trim(),
-    rol: document.getElementById('usr-rol').value,
-  });
+  const nombre = document.getElementById('usr-nombre').value.trim();
+  const correo = document.getElementById('usr-correo').value.trim();
+  const rol = document.getElementById('usr-rol').value;
+  
+  adminData.usuarios.push({ nombre, correo, rol });
   this.reset();
+  
   usrPage = 1;
   renderUsuarios();
 });
@@ -3483,3 +3660,71 @@ async function descargarActa(assetId, histIdx) {
   }
 }
 
+/* ===== Modal Genérico para Edición de CRUDs ===== */
+let currentEditType = null;
+let currentEditIndex = -1;
+
+function abrirCrudEditModal(type, title, html, index) {
+  currentEditType = type;
+  currentEditIndex = index;
+  document.getElementById('crud-edit-modal-title').textContent = title;
+  document.getElementById('crud-edit-fields-container').innerHTML = html;
+  document.getElementById('crud-edit-modal').classList.add('active');
+  document.getElementById('crud-edit-modal-scrim').classList.add('active');
+}
+
+function cerrarCrudEditModal() {
+  currentEditType = null;
+  currentEditIndex = -1;
+  document.getElementById('crud-edit-modal').classList.remove('active');
+  document.getElementById('crud-edit-modal-scrim').classList.remove('active');
+}
+
+document.getElementById('btn-close-crud-edit')?.addEventListener('click', cerrarCrudEditModal);
+document.getElementById('btn-cancel-crud-edit')?.addEventListener('click', cerrarCrudEditModal);
+document.getElementById('crud-edit-modal-scrim')?.addEventListener('click', cerrarCrudEditModal);
+
+document.getElementById('btn-save-crud-edit')?.addEventListener('click', function() {
+  if (currentEditType === 'categoria') {
+    const key = document.getElementById('edit-cat-key').value.trim();
+    const label = document.getElementById('edit-cat-label').value.trim();
+    if (!key || !label) { alert('Completa todos los campos.'); return; }
+    if (adminData.categorias.some((c, idx) => c.key === key && idx !== currentEditIndex)) {
+      alert('Ya existe una categoría con ese código.'); return;
+    }
+    adminData.categorias[currentEditIndex] = { key, label };
+    renderCategorias();
+  } 
+  else if (currentEditType === 'tipo-bien') {
+    const key = document.getElementById('edit-tipo-bien-key').value.trim();
+    const label = document.getElementById('edit-tipo-bien-label').value.trim();
+    if (!key || !label) { alert('Completa todos los campos.'); return; }
+    if (adminData.tiposBien.some((c, idx) => c.key === key && idx !== currentEditIndex)) {
+      alert('Ya existe un tipo de bien con ese código.'); return;
+    }
+    adminData.tiposBien[currentEditIndex] = { key, label };
+    renderTiposBien();
+  } 
+  else if (currentEditType === 'estado') {
+    const name = document.getElementById('edit-estado-name').value.trim();
+    const colorClass = document.getElementById('edit-estado-color').value;
+    if (!name) { alert('Completa todos los campos.'); return; }
+    if (adminData.estados.some((x, idx) => x.name === name && idx !== currentEditIndex)) {
+      alert('Ese estado ya existe.'); return;
+    }
+    adminData.estados[currentEditIndex] = { name, colorClass };
+    renderEstados();
+    renderDonut();
+  } 
+  else if (currentEditType === 'usuario') {
+    const nombre = document.getElementById('edit-usr-nombre').value.trim();
+    const correo = document.getElementById('edit-usr-correo').value.trim();
+    const rol = document.getElementById('edit-usr-rol').value;
+    if (!nombre || !correo) { alert('Completa todos los campos.'); return; }
+    adminData.usuarios[currentEditIndex] = { nombre, correo, rol };
+    renderUsuarios();
+  }
+  
+  cerrarCrudEditModal();
+  initFilterOptions();
+});
