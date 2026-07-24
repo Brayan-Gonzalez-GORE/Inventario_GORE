@@ -985,9 +985,30 @@
 
   <div id="print-area" class="print-area"></div>
 
+  <!-- Chatbot UI -->
+  <button id="btn-ai-chat" class="ai-chat-trigger" title="Preguntale a la IA">✨ Asistente IA</button>
+  
+  <div id="ai-chat-panel" class="ai-chat-panel" aria-hidden="true">
+    <div class="ai-chat-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size: 18px;">✨</span>
+        <h3 style="margin:0; font-size:14px; font-weight:600; color:var(--white);">Asistente Inventario</h3>
+      </div>
+      <button id="btn-close-chat" class="btn-close-chat">✕</button>
+    </div>
+    <div class="ai-chat-messages" id="ai-chat-messages">
+      <div class="chat-msg msg-ai">¡Hola! Soy tu asistente de inventario. Puedes preguntarme sobre la cantidad de bienes, valores totales u otras dudas operativas. ¿En qué te ayudo hoy?</div>
+    </div>
+    <form id="ai-chat-form" class="ai-chat-form">
+      <input type="text" id="ai-chat-input" placeholder="Escribe tu pregunta aquí..." required autocomplete="off">
+      <button type="submit" class="btn-send-chat">➤</button>
+    </form>
+  </div>
+
   <!-- Scripts -->
   <script src="js/data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/chat.js"></script>
 </body>
 
 </html>
