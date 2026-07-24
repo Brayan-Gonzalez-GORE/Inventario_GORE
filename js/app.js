@@ -830,7 +830,7 @@ function openFicha(id) {
         <div style="color:var(--slate-600)">
           De: <strong>${deFinal}</strong> ${m.deResponsable ? `(Entregado por: ${m.deResponsable})` : ''}<br>
           A: <strong>${aFinal}</strong> ${m.aResponsable ? `(Recibido por: ${m.aResponsable})` : ''}
-          ${m.actaGenerada ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:8px; display:inline-flex; align-items:center; gap:4px;" onclick="descargarActa(${r.id}, ${r.historialMovimientos.length - 1 - idx})">📄 Descargar Acta</button>` : (m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : '')}
+          ${(m.actaGenerada || m.tipo === 'Recepción' || m.tipo === 'Devolución') ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:8px; display:inline-flex; align-items:center; gap:4px;" onclick="descargarActa(${r.id}, ${r.historialMovimientos.length - 1 - idx})">📄 Descargar Acta</button>` : (m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : '')}
           ${m.obs ? `<br>Obs: <em>${m.obs}</em>` : ''}
         </div>
       </div>
@@ -2449,7 +2449,8 @@ document.getElementById('btn-save-receive')?.addEventListener('click', () => {
       deResponsable: r.responsableAsignacion || '',
       documento: documento,
       obs: obs,
-      tipo: 'Recepción'
+      tipo: 'Recepción',
+      actaGenerada: true
     });
 
     saveWorkingData();
@@ -3281,71 +3282,155 @@ if (btnThemeToggle) {
 }
 
 
-/* ===== GLOBAL USER SESSION INIT ===== */
-function initGlobalUserSession() {
-  const globalUsr = document.getElementById('global-usuario-activo');
-  if (!globalUsr) return;
-  
-  // Rellenar opciones
-  globalUsr.innerHTML = '<option value="Sistema">Sistema (Admin)</option>' +
-    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
-  
-  // Restaurar guardado
-  const savedUser = localStorage.getItem('gore_active_user');
-  if (savedUser) {
-    globalUsr.value = savedUser;
-  }
-  
-  // Almacenar al cambiar
-  globalUsr.addEventListener('change', (e) => {
-    localStorage.setItem('gore_active_user', e.target.value);
-  });
+function guardarPreferenciasScanner() {
+  localStorage.setItem('inv_ubicacion', document.getElementById('scan-ubicacion').value);
+  localStorage.setItem('inv_responsable', document.getElementById('scan-responsable').value);
+  localStorage.setItem('inv_estado', document.getElementById('scan-estado').value);
 }
-// Delay to ensure adminData is loaded
-setTimeout(initGlobalUserSession, 500);
+
+function cargarPreferenciasScanner() {
+  if (localStorage.getItem('inv_ubicacion')) {
+    loadAssetUbicacionToDropdownsScanner(localStorage.getItem('inv_ubicacion'));
+  }
+  if (localStorage.getItem('inv_responsable')) {
+    document.getElementById('scan-responsable').value = localStorage.getItem('inv_responsable');
+  }
+  if (localStorage.getItem('inv_estado')) {
+    document.getElementById('scan-estado').value = localStorage.getItem('inv_estado');
+  }
+}
 
 /* ===== Generador DOCX ===== */
 async function descargarActa(assetId, histIdx) {
   const asset = workingData.find(x => x.id === assetId);
   if (!asset) return;
   const h = asset.historialMovimientos[histIdx];
-  if (!h || !h.actaGenerada) return;
+  if (!h || (!h.actaGenerada && h.tipo !== 'Recepción' && h.tipo !== 'Devolución')) return;
 
   try {
+    let logoBlob;
+    try {
+      const response = await fetch("img/logo_gore_core_horizontal_color.png");
+      if (response.ok) {
+          logoBlob = await response.arrayBuffer();
+      }
+    } catch (e) {
+      console.warn("No se pudo cargar el logo", e);
+    }
+
+    const headerChildren = [];
+    if (logoBlob) {
+      headerChildren.push(new docx.Paragraph({
+        alignment: docx.AlignmentType.RIGHT,
+        children: [
+          new docx.ImageRun({
+            data: logoBlob,
+            transformation: { width: 350, height: 65 }
+          })
+        ],
+        spacing: { after: 600 }
+      }));
+    }
+
+    // Determine if it is a Devolucion (represented as 'Recepción' in the system)
+    const isDevolucion = (h.tipo === 'Recepción' || h.tipo === 'Devolución');
+    const principalName = isDevolucion ? (h.deResponsable || '_______________') : (h.aResponsable || '_______________');
+    const actionVerb = isDevolucion ? 'devolver al Gobierno Regional de Los Lagos' : 'recibir de parte del Gobierno Regional de Los Lagos';
+
     const doc = new docx.Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              font: "Courier New",
+              size: 20
+            }
+          }
+        }
+      },
       sections: [{
         properties: {},
         children: [
+          ...headerChildren,
           new docx.Paragraph({
-            text: "Acta de entrega, recepción y caución de bienes gobierno regional de los lagos",
-            heading: docx.HeadingLevel.HEADING_1,
             alignment: docx.AlignmentType.CENTER,
-            spacing: { after: 200 }
+            spacing: { after: 600 },
+            children: [
+              new docx.TextRun({ text: "ACTA DE ENTREGA, RECEPCIÓN Y CAUCIÓN DE BIENES", bold: true }),
+              new docx.TextRun({ text: "\nGOBIERNO REGIONAL DE LOS LAGOS", bold: true, break: 1 })
+            ]
           }),
           new docx.Paragraph({
-            text: `En Puerto Montt, a ${new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}.`,
-            spacing: { after: 200 }
+            alignment: docx.AlignmentType.RIGHT,
+            spacing: { after: 600 },
+            children: [
+              new docx.TextRun({ text: `En Puerto Montt, a ${new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}.` })
+            ]
           }),
           new docx.Paragraph({
-            text: `Don ${h.aResponsable || '_______________'}, Cédula Nacional de Identidad N° ${h.rutReceptor || '___________'}, con domicilio en ${h.domicilioReceptor || '________________________'}, declara recibir de parte del Gobierno Regional de Los Lagos, el siguiente equipo:`,
-            spacing: { after: 200 }
+            alignment: docx.AlignmentType.JUSTIFIED,
+            spacing: { after: 400 },
+            children: [
+              new docx.TextRun({ text: `Don ` }),
+              new docx.TextRun({ text: principalName.toUpperCase(), bold: true }),
+              new docx.TextRun({ text: `, Cédula Nacional de Identidad N° ` }),
+              new docx.TextRun({ text: h.rutReceptor || '___________' }),
+              new docx.TextRun({ text: `, con domicilio en ` }),
+              new docx.TextRun({ text: h.domicilioReceptor || '________________________' }),
+              new docx.TextRun({ text: `, declara ${actionVerb}, el siguiente equipo:` })
+            ]
           }),
-          new docx.Paragraph({
-            text: `${asset.detalle || ''}. SERIE: ${asset.codigo || ''}.`,
-            spacing: { after: 200 }
+          new docx.Table({
+            width: { size: 100, type: docx.WidthType.PERCENTAGE },
+            borders: {
+              top: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+              bottom: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+              left: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" },
+              right: { style: docx.BorderStyle.SINGLE, size: 1, color: "000000" }
+            },
+            rows: [
+              new docx.TableRow({
+                children: [
+                  new docx.TableCell({
+                    margins: { top: 150, bottom: 150, left: 150, right: 150 },
+                    children: [
+                      new docx.Paragraph({
+                        bullet: { level: 0 },
+                        text: `${asset.detalle || ''}. SERIE: ${asset.codigo || ''}.`
+                      })
+                    ]
+                  })
+                ]
+              })
+            ]
           }),
-          new docx.Paragraph({
-            text: "El equipamiento individualizado es de propiedad del Gobierno Regional de Los Lagos, se encuentra en buenas condiciones (semi nuevo) según se detalla y deja constancia, y es entregado al receptor para ser utilizado de manera personal y exclusivamente en las funciones propias del cargo en cuestión del Gobierno Regional de Los Lagos.",
-            spacing: { after: 200 }
-          }),
-          new docx.Paragraph({
-            text: "El receptor del equipo se obliga a no realizar actos de disposición a su respecto y devolverlo en las mismas condiciones en que lo recibe, habida consideración al desgaste propio del uso normal, al momento en que el propietario se lo requiera.",
-            spacing: { after: 200 }
-          }),
-          new docx.Paragraph({
-            text: "Asimismo, el receptor autoriza desde ya al Gobierno Regional de Los Lagos a descontar o compensar el monto de pérdida o daño causado al equipo por hecho imputable a dolo o culpa leve, con cualquier suma que a su vez el Gobierno Regional le adeude al receptor, ya sea por concepto de remuneración, honorarios, dieta, etc.",
-            spacing: { after: 600 }
-          }),
+          new docx.Paragraph({ text: "", spacing: { after: 400 } }),
+          
+          // Conditional Paragraphs based on type
+          ...(isDevolucion ? [
+            new docx.Paragraph({
+              alignment: docx.AlignmentType.JUSTIFIED,
+              spacing: { after: 800 },
+              text: "El equipamiento individualizado es de propiedad del Gobierno Regional de Los Lagos, se recibe y es revisado por el Encargado Unidad de Soporte Informático, don Nicanor Bahamonde Loustau, quien certifica que el estado del equipo está en buenas condiciones."
+            })
+          ] : [
+            new docx.Paragraph({
+              alignment: docx.AlignmentType.JUSTIFIED,
+              spacing: { after: 400 },
+              text: "El equipamiento individualizado es de propiedad del Gobierno Regional de Los Lagos, se encuentra en buenas condiciones (semi nuevo) según se detalla y deja constancia, y es entregado al receptor para ser utilizado de manera personal y exclusivamente en las funciones propias del cargo en cuestión del Gobierno Regional de Los Lagos."
+            }),
+            new docx.Paragraph({
+              alignment: docx.AlignmentType.JUSTIFIED,
+              spacing: { after: 400 },
+              text: "El receptor del equipo se obliga a no realizar actos de disposición a su respecto y devolverlo en las mismas condiciones en que lo recibe, habida consideración al desgaste propio del uso normal, al momento en que el propietario se lo requiera."
+            }),
+            new docx.Paragraph({
+              alignment: docx.AlignmentType.JUSTIFIED,
+              spacing: { after: 800 },
+              text: "Asimismo, el receptor autoriza desde ya al Gobierno Regional de Los Lagos a descontar o compensar el monto de pérdida o daño causado al equipo por hecho imputable a dolo o culpa leve, con cualquier suma que a su vez el Gobierno Regional le adeude al receptor, ya sea por concepto de remuneración, honorarios, dieta, etc."
+            })
+          ]),
+
           new docx.Table({
             width: { size: 100, type: docx.WidthType.PERCENTAGE },
             borders: docx.TableBorders.NONE,
@@ -3356,20 +3441,20 @@ async function descargarActa(assetId, histIdx) {
                     width: { size: 50, type: docx.WidthType.PERCENTAGE },
                     borders: docx.TableBorders.NONE,
                     children: [
-                      new docx.Paragraph({ text: "RECIBE", alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
-                      new docx.Paragraph({ text: h.aResponsable || '_________________', alignment: docx.AlignmentType.CENTER }),
-                      new docx.Paragraph({ text: h.cargoReceptor || '_________________', alignment: docx.AlignmentType.CENTER }),
-                      new docx.Paragraph({ text: h.aUbicacion ? h.aUbicacion.split(' - ').pop() : '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ children: [new docx.TextRun({ text: isDevolucion ? "ENTREGA" : "RECIBE", bold: true })], alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
+                      new docx.Paragraph({ text: isDevolucion ? (h.deResponsable || '_________________') : (h.aResponsable || '_________________'), alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: isDevolucion ? '_________________' : (h.cargoReceptor || '_________________'), alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: isDevolucion ? (h.deUbicacion ? h.deUbicacion.split(" - ").pop() : '_________________') : (h.aUbicacion ? h.aUbicacion.split(" - ").pop() : '_________________'), alignment: docx.AlignmentType.CENTER }),
                     ]
                   }),
                   new docx.TableCell({
                     width: { size: 50, type: docx.WidthType.PERCENTAGE },
                     borders: docx.TableBorders.NONE,
                     children: [
-                      new docx.Paragraph({ text: "ENTREGA", alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
+                      new docx.Paragraph({ children: [new docx.TextRun({ text: isDevolucion ? "RECIBE" : "ENTREGA", bold: true })], alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
                       new docx.Paragraph({ text: h.usuario || '_________________', alignment: docx.AlignmentType.CENTER }),
-                      new docx.Paragraph({ text: h.cargoEntrega || '_________________', alignment: docx.AlignmentType.CENTER }),
-                      new docx.Paragraph({ text: h.deUbicacion ? h.deUbicacion.split(' - ').pop() : '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: isDevolucion ? 'Soporte Informático' : (h.cargoEntrega || '_________________'), alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: isDevolucion ? (h.aUbicacion ? h.aUbicacion.split(" - ").pop() : '_________________') : (h.deUbicacion ? h.deUbicacion.split(" - ").pop() : '_________________'), alignment: docx.AlignmentType.CENTER }),
                     ]
                   })
                 ]
@@ -3377,17 +3462,24 @@ async function descargarActa(assetId, histIdx) {
             ]
           }),
           new docx.Paragraph({
-            text: "Distribución: Copia Interesado. Depto. Compras Públicas. Depto. TI & Control de Gestión. Depto. Finanzas y Presupuesto.",
-            spacing: { before: 800 }
-          })
+            children: [
+              new docx.TextRun({ text: "Distribución:", underline: { type: docx.UnderlineType.SINGLE } })
+            ],
+            spacing: { before: 600, after: 100 }
+          }),
+          new docx.Paragraph({ text: "Copia Interesado.", bullet: { level: 0 } }),
+          new docx.Paragraph({ text: "Depto. Compras Públicas.", bullet: { level: 0 } }),
+          new docx.Paragraph({ text: "Depto. TI & Control de Gestión.", bullet: { level: 0 } }),
+          new docx.Paragraph({ text: "Depto. Finanzas y Presupuesto.", bullet: { level: 0 } })
         ]
       }]
     });
 
     const blob = await docx.Packer.toBlob(doc);
-    saveAs(blob, `Acta_Entrega_${asset.codigo || assetId}_${h.aResponsable || 'SinNombre'}.docx`);
+    saveAs(blob, `Acta_${isDevolucion ? 'Devolucion' : 'Entrega'}_${asset.codigo || assetId}_${principalName.replace(/\s+/g, '_')}.docx`);
   } catch (error) {
     console.error("Error generating DOCX:", error);
-    alert("Hubo un error al generar el documento.");
+    alert("Hubo un error al generar el documento: " + error.message);
   }
 }
+
