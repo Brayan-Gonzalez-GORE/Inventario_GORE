@@ -59,6 +59,12 @@
           </div>
 
           <div class="topbar-actions">
+            <div style="display:flex; align-items:center; gap:8px; margin-right: 16px; border-right: 1px solid var(--slate-200); padding-right: 16px;">
+              <span style="font-size: 13px; color: var(--slate-500);">Sesión:</span>
+              <select id="global-usuario-activo" class="btn btn-line btn-sm" style="font-size: 13px; height: 32px; padding: 0 12px; min-width: 150px;">
+                <option value="Sistema">Sistema (Admin)</option>
+              </select>
+            </div>
             <button class="btn btn-ghost btn-sm" id="btn-theme-toggle" title="Alternar Modo Oscuro/Claro" style="font-size: 14px; margin-right: 8px;">🌙</button>
             <label class="btn btn-line btn-sm" for="file-input">⇧ Importar Excel/CSV</label>
             <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
@@ -633,7 +639,7 @@
                 </select></div>
               <input type="hidden" id="crud-ubicacion">
               <div class="field"><label>Estado</label><select id="crud-estado"></select></div>
-              <div class="field"><label>Usuario de Registro (Auditoría)</label><select id="crud-usuario-movimiento"><option value="Sistema">Sistema</option></select></div>
+              <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="crud-usuario-movimiento" disabled></div>
               <div class="field"><label>Responsable</label><input type="text" id="crud-responsable"></div>
               <div class="field"><label>Fecha Registro</label><input type="date" id="crud-fRegistro"></div>
               <div class="field"><label>Obs. Inventario</label><input type="text" id="crud-obsInv"></div>
@@ -755,7 +761,7 @@
         <div class="field"><label>Dependencia (Opcional)</label><select id="bulk-ubi-dependencia" disabled>
             <option value="">-- Ninguna --</option>
           </select></div>
-        <div class="field"><label>Usuario de Registro (Auditoría)</label><select id="bulk-usuario-movimiento"><option value="Sistema">Sistema</option></select></div>
+        <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="bulk-usuario-movimiento" disabled></div>
         <input type="hidden" id="bulk-ubicacion">
       </form>
     </div>

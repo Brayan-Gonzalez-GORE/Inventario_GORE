@@ -1775,9 +1775,11 @@ function populateSelects() {
   if (estSelect) estSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
     adminData.estados.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
 
-  const usrSelect = document.getElementById('crud-usuario-movimiento');
-  if (usrSelect) usrSelect.innerHTML = '<option value="Sistema">Sistema</option>' +
-    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
+  const usrInput = document.getElementById('crud-usuario-movimiento');
+  const globalUsr = document.getElementById('global-usuario-activo');
+  if (usrInput && globalUsr) {
+    usrInput.value = globalUsr.value || 'Sistema';
+  }
 }
 
 function actualizarUbicacionOculta() {
@@ -1845,6 +1847,12 @@ const crudForm = document.getElementById('crud-form');
 function openCrudModal(id = null) {
   populateSelects();
   crudForm.reset();
+
+  const usrInput = document.getElementById('crud-usuario-movimiento');
+  const globalUsr = document.getElementById('global-usuario-activo');
+  if (usrInput && globalUsr) {
+    usrInput.value = globalUsr.value || 'Sistema';
+  }
 
   if (id !== null) {
     document.getElementById('crud-modal-title').textContent = 'Editar Bien';
@@ -2330,9 +2338,11 @@ function openBulkMoveModal() {
 
   depSelect.onchange = actualizarBulkUbicacionOculta;
 
-  const bulkUsrSelect = document.getElementById('bulk-usuario-movimiento');
-  if (bulkUsrSelect) bulkUsrSelect.innerHTML = '<option value="Sistema">Sistema</option>' +
-    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
+  const bulkUsrInput = document.getElementById('bulk-usuario-movimiento');
+  const globalUsr = document.getElementById('global-usuario-activo');
+  if (bulkUsrInput && globalUsr) {
+    bulkUsrInput.value = globalUsr.value || 'Sistema';
+  }
 
   if (bulkMoveScrim) bulkMoveScrim.classList.add('open');
   if (bulkMoveModal) bulkMoveModal.setAttribute('aria-hidden', 'false');
@@ -2738,4 +2748,28 @@ if (btnThemeToggle) {
     }
   });
 }
+
+
+/* ===== GLOBAL USER SESSION INIT ===== */
+function initGlobalUserSession() {
+  const globalUsr = document.getElementById('global-usuario-activo');
+  if (!globalUsr) return;
+  
+  // Rellenar opciones
+  globalUsr.innerHTML = '<option value="Sistema">Sistema (Admin)</option>' +
+    (adminData.usuarios || []).map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
+  
+  // Restaurar guardado
+  const savedUser = localStorage.getItem('gore_active_user');
+  if (savedUser) {
+    globalUsr.value = savedUser;
+  }
+  
+  // Almacenar al cambiar
+  globalUsr.addEventListener('change', (e) => {
+    localStorage.setItem('gore_active_user', e.target.value);
+  });
+}
+// Delay to ensure adminData is loaded
+setTimeout(initGlobalUserSession, 500);
 
