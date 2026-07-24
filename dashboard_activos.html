@@ -164,7 +164,7 @@
               </div>
               <div class="field">
                 <label for="f-rut">RUT Proveedor</label>
-                <input type="text" id="f-rut" placeholder="Ej: 76.158.484-7">
+                <input type="text" id="f-rut" placeholder="Ej: 76.158.484-7" pattern="\d{1,2}\.\d{3}\.\d{3}-[\dkK]" maxlength="12" title="Formato válido: XX.XXX.XXX-X">
               </div>
               <div class="field">
                 <label for="f-responsable">Responsable</label>
@@ -682,7 +682,7 @@
           <div style="display:flex; flex-direction:column; gap:24px;">
             <div class="form-section">
               <h3>Datos de Compra</h3>
-              <div class="field"><label>RUT Proveedor</label><input type="text" id="crud-rut"></div>
+              <div class="field"><label>RUT Proveedor</label><input type="text" id="crud-rut" pattern="\d{1,2}\.\d{3}\.\d{3}-[\dkK]" maxlength="12" title="Formato válido: XX.XXX.XXX-X"></div>
               <div class="field"><label>N° Factura</label><input type="text" id="crud-factura"></div>
               <div class="field"><label>Fecha Factura</label><input type="date" id="crud-fFactura"></div>
               <div class="field"><label>N° Egreso</label><input type="text" id="crud-egreso"></div>
@@ -738,7 +738,7 @@
         <div class="form-section">
           <div class="field"><label>A quién se entrega (Responsable)</label><input type="text" id="assign-responsable" required placeholder="Nombre completo"></div>
           <div style="display:flex; gap:16px; margin-top:16px;">
-            <div class="field" style="flex:1; margin:0;"><label>RUT Receptor</label><input type="text" id="assign-rut" placeholder="Ej: 19.027.895-6"></div>
+            <div class="field" style="flex:1; margin:0;"><label>RUT Receptor</label><input type="text" id="assign-rut" placeholder="Ej: 19.027.895-6" pattern="\d{1,2}\.\d{3}\.\d{3}-[\dkK]" maxlength="12" title="Formato válido: XX.XXX.XXX-X"></div>
             <div class="field" style="flex:1; margin:0;"><label>Cargo Receptor</label><input type="text" id="assign-cargo-receptor" placeholder="Ej: Apoyo Profesional"></div>
           </div>
           <div class="field" style="margin-top:16px;"><label>Domicilio Receptor</label><input type="text" id="assign-domicilio" placeholder="Ej: Los Pimiento 4756, Valle Volcanes"></div>
@@ -804,7 +804,7 @@
         <div class="form-section">
           <div class="field"><label>A quién se entregan (Responsable)</label><input type="text" id="mass-assign-responsable" required placeholder="Nombre completo"></div>
           <div style="display:flex; gap:16px; margin-top:16px;">
-            <div class="field" style="flex:1; margin:0;"><label>RUT Receptor</label><input type="text" id="mass-assign-rut" placeholder="Ej: 19.027.895-6"></div>
+            <div class="field" style="flex:1; margin:0;"><label>RUT Receptor</label><input type="text" id="mass-assign-rut" placeholder="Ej: 19.027.895-6" pattern="\d{1,2}\.\d{3}\.\d{3}-[\dkK]" maxlength="12" title="Formato válido: XX.XXX.XXX-X"></div>
             <div class="field" style="flex:1; margin:0;"><label>Cargo Receptor</label><input type="text" id="mass-assign-cargo-receptor" placeholder="Ej: Apoyo Profesional"></div>
           </div>
           <div class="field" style="margin-top:16px;"><label>Domicilio Receptor</label><input type="text" id="mass-assign-domicilio" placeholder="Ej: Los Pimiento 4756, Valle Volcanes"></div>
