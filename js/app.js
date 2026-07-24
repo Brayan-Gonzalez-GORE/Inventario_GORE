@@ -833,11 +833,21 @@ function openFicha(id) {
   body.innerHTML = html;
 
   const btnBaja = document.getElementById('btn-baja-asset');
-  if (btnBaja) {
-    if (r.anioBaja || r.fechaBaja || (r.estado && normEstado(r.estado) === 'De Baja')) {
-      btnBaja.style.display = 'none';
+  const btnAssign = document.getElementById('btn-assign-asset');
+  const btnReceive = document.getElementById('btn-receive-asset');
+
+  if (r.anioBaja || r.fechaBaja || (r.estado && normEstado(r.estado) === 'De Baja')) {
+    if (btnBaja) btnBaja.style.display = 'none';
+    if (btnAssign) btnAssign.style.display = 'none';
+    if (btnReceive) btnReceive.style.display = 'none';
+  } else {
+    if (btnBaja) btnBaja.style.display = '';
+    if (r.estado && normEstado(r.estado) === 'Asignado') {
+      if (btnAssign) btnAssign.style.display = 'none';
+      if (btnReceive) btnReceive.style.display = '';
     } else {
-      btnBaja.style.display = '';
+      if (btnAssign) btnAssign.style.display = '';
+      if (btnReceive) btnReceive.style.display = 'none';
     }
   }
 
@@ -1999,6 +2009,11 @@ document.getElementById('btn-close-modal')?.addEventListener('click', closeCrudM
 document.getElementById('btn-cancel-modal')?.addEventListener('click', closeCrudModal);
 document.getElementById('crud-modal-scrim')?.addEventListener('click', closeCrudModal);
 
+document.getElementById('btn-today-fRegistro')?.addEventListener('click', () => {
+  const d = new Date();
+  document.getElementById('crud-fRegistro').value = d.toISOString().split('T')[0];
+});
+
 document.getElementById('btn-new-asset')?.addEventListener('click', () => {
   openCrudModal(null);
 });
@@ -2255,6 +2270,166 @@ document.getElementById('btn-save-assign')?.addEventListener('click', () => {
     saveWorkingData();
     refreshAll();
     closeAssignModal();
+    openFicha(currentFichaId);
+  }
+});
+
+/* ===== Recibir Equipo (Modal) ===== */
+const receiveModalScrim = document.getElementById('receive-modal-scrim');
+const receiveModal = document.getElementById('receive-modal');
+const receiveForm = document.getElementById('receive-form');
+
+function openReceiveModal(id) {
+  if (id === null) return;
+  receiveForm.reset();
+  
+  const r = workingData.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('receive-responsable').value = r.responsableAsignacion || '';
+  
+  const estSelect = document.getElementById('receive-estado');
+  estSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+    adminData.estados.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+  
+  const divSelect = document.getElementById('receive-ubi-division');
+  const uniSelect = document.getElementById('receive-ubi-unidad');
+  const depSelect = document.getElementById('receive-ubi-dependencia');
+
+  divSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+    adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+  uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+  uniSelect.disabled = true;
+  depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+  depSelect.disabled = true;
+  document.getElementById('receive-ubicacion').value = '';
+
+  const actualizarReceiveUbicacionOculta = () => {
+    const divId = divSelect.value;
+    const uniId = uniSelect.value;
+    const depId = depSelect.value;
+    let ubiStr = '';
+    if (divId) {
+      const d = adminData.divisiones.find(x => x.id === divId);
+      if (d) {
+        ubiStr = d.nombre;
+        if (uniId) {
+          const u = d.unidades.find(x => x.id === uniId);
+          if (u) {
+            ubiStr += ' - ' + u.nombre;
+            if (depId) {
+              const dep = u.dependencias.find(x => x.id === depId);
+              if (dep) ubiStr += ' - ' + dep.nombre;
+            }
+          }
+        }
+      }
+    }
+    document.getElementById('receive-ubicacion').value = ubiStr;
+  };
+
+  divSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === this.value);
+    if (d) {
+      uniSelect.innerHTML = '<option value="">-- Seleccione Unidad --</option>' +
+        d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+      uniSelect.disabled = false;
+    } else {
+      uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+      uniSelect.disabled = true;
+    }
+    depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+    depSelect.disabled = true;
+    actualizarReceiveUbicacionOculta();
+  };
+
+  uniSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === divSelect.value);
+    const u = d ? d.unidades.find(x => x.id === this.value) : null;
+    if (u && u.dependencias.length > 0) {
+      depSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+        u.dependencias.map(dep => `<option value="${dep.id}">${dep.nombre}</option>`).join('');
+      depSelect.disabled = false;
+    } else {
+      depSelect.innerHTML = '<option value="">-- Sin dependencias --</option>';
+      depSelect.disabled = true;
+    }
+    actualizarReceiveUbicacionOculta();
+  };
+
+  depSelect.onchange = actualizarReceiveUbicacionOculta;
+
+  receiveModalScrim.classList.add('open');
+  receiveModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeReceiveModal() {
+  receiveModalScrim.classList.remove('open');
+  receiveModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-close-receive')?.addEventListener('click', closeReceiveModal);
+document.getElementById('btn-cancel-receive')?.addEventListener('click', closeReceiveModal);
+receiveModalScrim?.addEventListener('click', closeReceiveModal);
+
+document.getElementById('btn-receive-asset')?.addEventListener('click', () => {
+  if (currentFichaId !== null) openReceiveModal(currentFichaId);
+});
+
+document.getElementById('btn-save-receive')?.addEventListener('click', () => {
+  if (!receiveForm.checkValidity()) {
+    receiveForm.reportValidity();
+    return;
+  }
+  const divSelect = document.getElementById('receive-ubi-division');
+  const uniSelect = document.getElementById('receive-ubi-unidad');
+  const depSelect = document.getElementById('receive-ubi-dependencia');
+  
+  if (!divSelect.value || !uniSelect.value) {
+    alert("Por favor seleccione al menos una División y un Departamento/Unidad destino.");
+    return;
+  }
+  if (!depSelect.disabled && !depSelect.value) {
+    alert("Por favor seleccione una Dependencia destino.");
+    return;
+  }
+
+  const newUbicacion = document.getElementById('receive-ubicacion').value;
+  const newEstado = document.getElementById('receive-estado').value;
+  const documento = document.getElementById('receive-documento').value.trim();
+  const obs = document.getElementById('receive-obs').value.trim();
+
+  const idx = workingData.findIndex(x => x.id === currentFichaId);
+  if (idx !== -1) {
+    const r = workingData[idx];
+    const oldUbicacion = r.ubicacion;
+
+    r.ubicacion = newUbicacion;
+    r.estado = newEstado;
+    
+    // Clear out assignment details as the asset is returned
+    r.responsableAsignacion = '';
+    r.documentoAsignacion = '';
+
+    r.historialMovimientos = r.historialMovimientos || [];
+    const globalUsr = document.getElementById('global-usuario-activo');
+    const usuarioActivo = (globalUsr && globalUsr.value) ? globalUsr.value : 'Sistema';
+
+    r.historialMovimientos.push({
+      fecha: new Date().toISOString(),
+      usuario: usuarioActivo,
+      deUbicacion: oldUbicacion || 'Sin asignar',
+      aUbicacion: newUbicacion,
+      documento: documento,
+      obs: obs,
+      tipo: 'Recepción'
+    });
+
+    saveWorkingData();
+    refreshAll();
+    closeReceiveModal();
     openFicha(currentFichaId);
   }
 });

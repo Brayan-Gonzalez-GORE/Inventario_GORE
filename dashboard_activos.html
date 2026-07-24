@@ -561,6 +561,8 @@
       <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
         <button class="btn btn-primary btn-sm" id="btn-assign-asset"
           style="background: var(--teal); border-color: var(--teal); color: white;">Asignar Equipo</button>
+        <button class="btn btn-primary btn-sm" id="btn-receive-asset"
+          style="background: var(--amber); border-color: var(--amber); color: white; display: none;">Recibir Equipo</button>
         <button class="btn btn-line btn-sm" id="btn-edit-asset"
           style="background: rgba(255,255,255,0.1); color: #FFFFFF; border-color: rgba(255,255,255,0.2);">Editar</button>
         <button class="btn btn-line btn-sm" id="btn-baja-asset"
@@ -596,17 +598,26 @@
               <div class="field"><label>Código / N° Serie</label><input type="text" id="crud-codigo"></div>
             </div>
             <div class="form-section">
-              <h3>Depreciación (Automática)</h3>
-              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual"
-                  readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-1"></span></label><input type="text"
-                  id="crud-dep2024" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-2"></span></label><input type="text"
-                  id="crud-dep2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Depreciación Año <span id="lbl-dep-3"></span></label><input type="text"
-                  id="crud-depAnio2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
-              <div class="field"><label>Valor Libro</label><input type="text" id="crud-valorLibro" readonly
-                  style="background:#f1f5f9; color:#64748b; font-weight:bold;"></div>
+              <h3>Estado y Ubicación</h3>
+              <div class="field"><label>División / Repartición</label><select id="crud-ubi-division" required></select>
+              </div>
+              <div class="field"><label>Departamento / Unidad</label><select id="crud-ubi-unidad" required
+                  disabled></select></div>
+              <div class="field"><label>Dependencia (Opcional)</label><select id="crud-ubi-dependencia" disabled>
+                  <option value="">-- Ninguna --</option>
+                </select></div>
+              <input type="hidden" id="crud-ubicacion">
+              <div class="field"><label>Estado</label><select id="crud-estado"></select></div>
+              <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="crud-usuario-movimiento" disabled></div>
+              <div class="field"><label>Responsable</label><input type="text" id="crud-responsable"></div>
+              <div class="field">
+                <label>Fecha Registro</label>
+                <div style="display:flex; gap:8px;">
+                  <input type="date" id="crud-fRegistro" style="flex-grow:1;">
+                  <button type="button" class="btn btn-line" id="btn-today-fRegistro" style="padding: 0 12px; font-size:12px; height:38px;">Actual</button>
+                </div>
+              </div>
+              <div class="field"><label>Obs. Inventario</label><input type="text" id="crud-obsInv"></div>
             </div>
           </div>
 
@@ -634,20 +645,17 @@
               <div class="field"><label>Meses Vida Útil</label><input type="number" id="crud-mesesVida"></div>
             </div>
             <div class="form-section">
-              <h3>Estado y Ubicación</h3>
-              <div class="field"><label>División / Repartición</label><select id="crud-ubi-division" required></select>
-              </div>
-              <div class="field"><label>Departamento / Unidad</label><select id="crud-ubi-unidad" required
-                  disabled></select></div>
-              <div class="field"><label>Dependencia (Opcional)</label><select id="crud-ubi-dependencia" disabled>
-                  <option value="">-- Ninguna --</option>
-                </select></div>
-              <input type="hidden" id="crud-ubicacion">
-              <div class="field"><label>Estado</label><select id="crud-estado"></select></div>
-              <div class="field"><label>Usuario de Registro (Auditoría)</label><input type="text" id="crud-usuario-movimiento" disabled></div>
-              <div class="field"><label>Responsable</label><input type="text" id="crud-responsable"></div>
-              <div class="field"><label>Fecha Registro</label><input type="date" id="crud-fRegistro"></div>
-              <div class="field"><label>Obs. Inventario</label><input type="text" id="crud-obsInv"></div>
+              <h3>Depreciación (Automática)</h3>
+              <div class="field"><label>Vida Útil Actual (meses)</label><input type="number" id="crud-vidaActual"
+                  readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-1"></span></label><input type="text"
+                  id="crud-dep2024" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Acumulada <span id="lbl-dep-2"></span></label><input type="text"
+                  id="crud-dep2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Depreciación Año <span id="lbl-dep-3"></span></label><input type="text"
+                  id="crud-depAnio2025" readonly style="background:#f1f5f9; color:#64748b;"></div>
+              <div class="field"><label>Valor Libro</label><input type="text" id="crud-valorLibro" readonly
+                  style="background:#f1f5f9; color:#64748b; font-weight:bold;"></div>
             </div>
           </div>
         </div>
@@ -687,6 +695,37 @@
     <div class="crud-modal-footer">
       <button type="button" class="btn btn-line" id="btn-cancel-assign">Cancelar</button>
       <button type="button" class="btn btn-primary" id="btn-save-assign" style="background: var(--teal); border-color: var(--teal);">Guardar Asignación</button>
+    </div>
+  </div>
+
+  <!-- MODAL RECIBIR EQUIPO -->
+  <div class="crud-modal-scrim" id="receive-modal-scrim"></div>
+  <div class="crud-modal" id="receive-modal" aria-hidden="true" style="max-width: 500px;">
+    <div class="crud-modal-header">
+      <h2 id="receive-modal-title">Recibir Equipo</h2>
+      <button class="crud-modal-close" id="btn-close-receive">×</button>
+    </div>
+    <div class="crud-modal-body">
+      <form id="receive-form">
+        <div class="form-section">
+          <div class="field"><label>Se recibe de (Responsable)</label><input type="text" id="receive-responsable" readonly style="background: var(--slate-100); color: var(--slate-500);"></div>
+          
+          <div class="field" style="margin-top: 16px;"><label>Estado al recibir</label><select id="receive-estado" required></select></div>
+          
+          <div class="field" style="margin-top: 16px;"><label>División / Repartición destino (Bodega u otro)</label><select id="receive-ubi-division" required></select></div>
+          <div class="field"><label>Departamento / Unidad destino</label><select id="receive-ubi-unidad" required disabled></select></div>
+          <div class="field"><label>Dependencia destino</label><select id="receive-ubi-dependencia" required disabled><option value="">-- Seleccione --</option></select></div>
+          <input type="hidden" id="receive-ubicacion">
+  
+          <div class="field" style="margin-top: 16px;"><label>Documento de Recepción (Ref.)</label><input type="text" id="receive-documento" placeholder="Ej: Acta N° 1235, Enlace a PDF..." required></div>
+          
+          <div class="field"><label>Observaciones</label><input type="text" id="receive-obs" placeholder="Ej: Equipo devuelto con rayones..."></div>
+        </div>
+      </form>
+    </div>
+    <div class="crud-modal-footer">
+      <button type="button" class="btn btn-line" id="btn-cancel-receive">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btn-save-receive" style="background: var(--amber); border-color: var(--amber);">Guardar Recepción</button>
     </div>
   </div>
 
