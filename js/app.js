@@ -813,7 +813,7 @@ function openFicha(id) {
   if (r.obsInv) html += `<div class="ficha-note">${r.obsInv}</div>`;
 
   if (r.historialMovimientos && r.historialMovimientos.length > 0) {
-    let histHtml = '<div class="ficha-rows" style="display:flex; flex-direction:column; gap:8px;">';
+    let histHtml = '<div class="ficha-rows" style="display:flex; flex-direction:column; gap:8px; max-height:400px; overflow-y:auto; padding-right:4px;">';
     r.historialMovimientos.slice().reverse().forEach((m, idx) => {
       const d = new Date(m.fecha);
       const ds = `${d.getDate().toString().padStart(2, '0')}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getFullYear()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -830,7 +830,7 @@ function openFicha(id) {
         <div style="color:var(--slate-600)">
           De: <strong>${deFinal}</strong> ${m.deResponsable ? `(Entregado por: ${m.deResponsable})` : ''}<br>
           A: <strong>${aFinal}</strong> ${m.aResponsable ? `(Recibido por: ${m.aResponsable})` : ''}
-          ${m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : ''}
+          ${m.actaGenerada ? `<br><button class="btn btn-secondary btn-sm" style="margin-top:8px; display:inline-flex; align-items:center; gap:4px;" onclick="descargarActa(${r.id}, ${r.historialMovimientos.length - 1 - idx})">📄 Descargar Acta</button>` : (m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : '')}
           ${m.obs ? `<br>Obs: <em>${m.obs}</em>` : ''}
         </div>
       </div>
@@ -2091,7 +2091,9 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
       fecha: new Date().toISOString(),
       usuario: usuarioMovimiento,
       deUbicacion: 'Nuevo Registro',
-      aUbicacion: asset.ubicacion || 'Sin asignar'
+      aUbicacion: asset.ubicacion || 'Sin asignar',
+      tipo: 'Registro',
+      aResponsable: asset.responsable || ''
     }];
     workingData.unshift(asset); // Add to beginning
   } else {
@@ -2112,7 +2114,10 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
           fecha: new Date().toISOString(),
           usuario: usuarioMovimiento,
           deUbicacion: old.ubicacion || 'Sin asignar',
-          aUbicacion: asset.ubicacion || 'Sin asignar'
+          aUbicacion: asset.ubicacion || 'Sin asignar',
+          deResponsable: old.responsable || '',
+          aResponsable: asset.responsable || '',
+          tipo: 'Edición de Ubicación'
         });
       }
       
@@ -2250,7 +2255,10 @@ document.getElementById('btn-save-assign')?.addEventListener('click', () => {
   const newUbicacion = document.getElementById('assign-ubicacion').value;
   
   const responsable = document.getElementById('assign-responsable').value.trim();
-  const documento = document.getElementById('assign-documento').value.trim();
+  const rut = document.getElementById('assign-rut').value.trim();
+  const cargoReceptor = document.getElementById('assign-cargo-receptor').value.trim();
+  const domicilio = document.getElementById('assign-domicilio').value.trim();
+  const cargoEntrega = document.getElementById('assign-cargo-entrega').value.trim();
   const obs = document.getElementById('assign-obs').value.trim();
 
   const idx = workingData.findIndex(x => x.id === currentFichaId);
@@ -2261,7 +2269,7 @@ document.getElementById('btn-save-assign')?.addEventListener('click', () => {
     r.responsableAsignacion = responsable;
     r.ubicacion = newUbicacion;
     r.estado = 'Asignado';
-    r.documentoAsignacion = documento;
+    r.documentoAsignacion = 'Auto-generado';
 
     r.historialMovimientos = r.historialMovimientos || [];
     const globalUsr = document.getElementById('global-usuario-activo');
@@ -2273,7 +2281,12 @@ document.getElementById('btn-save-assign')?.addEventListener('click', () => {
       deUbicacion: oldUbicacion || 'Sin asignar',
       aUbicacion: newUbicacion,
       aResponsable: responsable,
-      documento: documento,
+      rutReceptor: rut,
+      cargoReceptor: cargoReceptor,
+      domicilioReceptor: domicilio,
+      cargoEntrega: cargoEntrega,
+      actaGenerada: true,
+      documento: 'Auto-generado',
       obs: obs,
       tipo: 'Asignación'
     });
@@ -2758,7 +2771,9 @@ document.getElementById('btn-save-bulk-move')?.addEventListener('click', () => {
           fecha: new Date().toISOString(),
           usuario: bulkUsuario,
           deUbicacion: r.ubicacion || 'Sin asignar',
-          aUbicacion: newUbicacion
+          aUbicacion: newUbicacion,
+          aResponsable: r.responsable || '',
+          tipo: 'Movimiento Masivo'
         });
       }
       r.ubicacion = newUbicacion;
@@ -2871,7 +2886,10 @@ document.getElementById('btn-save-mass-assign')?.addEventListener('click', () =>
   }
 
   const responsable = document.getElementById('mass-assign-responsable').value.trim();
-  const documento = document.getElementById('mass-assign-documento').value.trim();
+  const rut = document.getElementById('mass-assign-rut').value.trim();
+  const cargoReceptor = document.getElementById('mass-assign-cargo-receptor').value.trim();
+  const domicilio = document.getElementById('mass-assign-domicilio').value.trim();
+  const cargoEntrega = document.getElementById('mass-assign-cargo-entrega').value.trim();
   const obs = document.getElementById('mass-assign-obs').value.trim();
   const newUbicacion = document.getElementById('mass-assign-ubicacion').value;
 
@@ -2897,7 +2915,7 @@ document.getElementById('btn-save-mass-assign')?.addEventListener('click', () =>
       r.ubicacion = newUbicacion;
       r.estado = 'Asignado';
       r.responsableAsignacion = responsable;
-      r.documentoAsignacion = documento;
+      r.documentoAsignacion = 'Auto-generado';
 
       r.historialMovimientos = r.historialMovimientos || [];
       r.historialMovimientos.push({
@@ -2906,7 +2924,12 @@ document.getElementById('btn-save-mass-assign')?.addEventListener('click', () =>
         deUbicacion: oldUbicacion || 'Sin asignar',
         aUbicacion: newUbicacion,
         aResponsable: responsable,
-        documento: documento,
+        rutReceptor: rut,
+        cargoReceptor: cargoReceptor,
+        domicilioReceptor: domicilio,
+        cargoEntrega: cargoEntrega,
+        actaGenerada: true,
+        documento: 'Auto-generado',
         obs: obs,
         tipo: 'Asignación'
       });
@@ -3281,3 +3304,90 @@ function initGlobalUserSession() {
 // Delay to ensure adminData is loaded
 setTimeout(initGlobalUserSession, 500);
 
+/* ===== Generador DOCX ===== */
+async function descargarActa(assetId, histIdx) {
+  const asset = workingData.find(x => x.id === assetId);
+  if (!asset) return;
+  const h = asset.historialMovimientos[histIdx];
+  if (!h || !h.actaGenerada) return;
+
+  try {
+    const doc = new docx.Document({
+      sections: [{
+        properties: {},
+        children: [
+          new docx.Paragraph({
+            text: "Acta de entrega, recepción y caución de bienes gobierno regional de los lagos",
+            heading: docx.HeadingLevel.HEADING_1,
+            alignment: docx.AlignmentType.CENTER,
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: `En Puerto Montt, a ${new Date(h.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}.`,
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: `Don ${h.aResponsable || '_______________'}, Cédula Nacional de Identidad N° ${h.rutReceptor || '___________'}, con domicilio en ${h.domicilioReceptor || '________________________'}, declara recibir de parte del Gobierno Regional de Los Lagos, el siguiente equipo:`,
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: `${asset.detalle || ''}. SERIE: ${asset.codigo || ''}.`,
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: "El equipamiento individualizado es de propiedad del Gobierno Regional de Los Lagos, se encuentra en buenas condiciones (semi nuevo) según se detalla y deja constancia, y es entregado al receptor para ser utilizado de manera personal y exclusivamente en las funciones propias del cargo en cuestión del Gobierno Regional de Los Lagos.",
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: "El receptor del equipo se obliga a no realizar actos de disposición a su respecto y devolverlo en las mismas condiciones en que lo recibe, habida consideración al desgaste propio del uso normal, al momento en que el propietario se lo requiera.",
+            spacing: { after: 200 }
+          }),
+          new docx.Paragraph({
+            text: "Asimismo, el receptor autoriza desde ya al Gobierno Regional de Los Lagos a descontar o compensar el monto de pérdida o daño causado al equipo por hecho imputable a dolo o culpa leve, con cualquier suma que a su vez el Gobierno Regional le adeude al receptor, ya sea por concepto de remuneración, honorarios, dieta, etc.",
+            spacing: { after: 600 }
+          }),
+          new docx.Table({
+            width: { size: 100, type: docx.WidthType.PERCENTAGE },
+            borders: docx.TableBorders.NONE,
+            rows: [
+              new docx.TableRow({
+                children: [
+                  new docx.TableCell({
+                    width: { size: 50, type: docx.WidthType.PERCENTAGE },
+                    borders: docx.TableBorders.NONE,
+                    children: [
+                      new docx.Paragraph({ text: "RECIBE", alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
+                      new docx.Paragraph({ text: h.aResponsable || '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: h.cargoReceptor || '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: h.aUbicacion ? h.aUbicacion.split(' - ').pop() : '_________________', alignment: docx.AlignmentType.CENTER }),
+                    ]
+                  }),
+                  new docx.TableCell({
+                    width: { size: 50, type: docx.WidthType.PERCENTAGE },
+                    borders: docx.TableBorders.NONE,
+                    children: [
+                      new docx.Paragraph({ text: "ENTREGA", alignment: docx.AlignmentType.CENTER, spacing: { after: 100 } }),
+                      new docx.Paragraph({ text: h.usuario || '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: h.cargoEntrega || '_________________', alignment: docx.AlignmentType.CENTER }),
+                      new docx.Paragraph({ text: h.deUbicacion ? h.deUbicacion.split(' - ').pop() : '_________________', alignment: docx.AlignmentType.CENTER }),
+                    ]
+                  })
+                ]
+              })
+            ]
+          }),
+          new docx.Paragraph({
+            text: "Distribución: Copia Interesado. Depto. Compras Públicas. Depto. TI & Control de Gestión. Depto. Finanzas y Presupuesto.",
+            spacing: { before: 800 }
+          })
+        ]
+      }]
+    });
+
+    const blob = await docx.Packer.toBlob(doc);
+    saveAs(blob, `Acta_Entrega_${asset.codigo || assetId}_${h.aResponsable || 'SinNombre'}.docx`);
+  } catch (error) {
+    console.error("Error generating DOCX:", error);
+    alert("Hubo un error al generar el documento.");
+  }
+}
