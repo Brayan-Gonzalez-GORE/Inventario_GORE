@@ -128,7 +128,13 @@ function mergeAdminDataFromData() {
       { name: 'Operativo', colorClass: 'teal' },
       { name: 'En Bodega', colorClass: 'amber' },
       { name: 'De Baja', colorClass: 'brick' },
+      { name: 'Asignado', colorClass: 'indigo' },
     ];
+  } else {
+    // Asegurar que 'Asignado' exista si ya había datos guardados
+    if (!adminData.estados.some(e => e.name === 'Asignado')) {
+      adminData.estados.push({ name: 'Asignado', colorClass: 'indigo' });
+    }
   }
 
   migrateDivisiones();
@@ -382,6 +388,7 @@ function currentFilters() {
     factura: document.getElementById('f-factura').value.trim().toLowerCase(),
     rut: document.getElementById('f-rut').value.trim().toLowerCase(),
     responsable: document.getElementById('f-responsable').value.trim().toLowerCase(),
+    documento: document.getElementById('f-documento').value.trim().toLowerCase(),
     anioBaja: document.getElementById('f-anio-baja').value,
   };
 }
@@ -394,7 +401,7 @@ function applyFilters() {
     if (f.ubicacion && r.ubicacion !== f.ubicacion) return false;
     if (f.estado && normEstado(r.estado) !== f.estado) return false;
     if (f.search) {
-      const hay = [r.detalle, r.rut, r.codigo, r.responsable, String(r.id), r.factura]
+      const hay = [r.detalle, r.rut, r.codigo, r.responsable, r.responsableAsignacion, r.documentoAsignacion, String(r.id), r.factura]
         .filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(f.search)) return false;
     }
@@ -408,7 +415,8 @@ function applyFilters() {
     
     if (f.factura && !String(r.factura || '').toLowerCase().includes(f.factura)) return false;
     if (f.rut && !String(r.rut || '').toLowerCase().includes(f.rut)) return false;
-    if (f.responsable && !String(r.responsable || '').toLowerCase().includes(f.responsable)) return false;
+    if (f.responsable && !String(r.responsable || '').toLowerCase().includes(f.responsable) && !String(r.responsableAsignacion || '').toLowerCase().includes(f.responsable)) return false;
+    if (f.documento && !String(r.documentoAsignacion || '').toLowerCase().includes(f.documento)) return false;
     if (f.anioBaja && String(r.anioBaja) !== f.anioBaja) return false;
     
     return true;
@@ -608,7 +616,7 @@ document.getElementById('f-baja').addEventListener('change', applyFilters);
 
 // Event listeners para campos de texto/número con debounce
 let advancedTimer;
-['f-compra-min', 'f-compra-max', 'f-factura', 'f-rut', 'f-responsable'].forEach(id => {
+['f-compra-min', 'f-compra-max', 'f-factura', 'f-rut', 'f-responsable', 'f-documento'].forEach(id => {
   document.getElementById(id)?.addEventListener('input', () => {
     clearTimeout(advancedTimer);
     advancedTimer = setTimeout(applyFilters, 180);
@@ -630,6 +638,7 @@ document.getElementById('btn-clear-filters').addEventListener('click', () => {
   document.getElementById('f-factura').value = '';
   document.getElementById('f-rut').value = '';
   document.getElementById('f-responsable').value = '';
+  document.getElementById('f-documento').value = '';
   document.getElementById('f-anio-baja').value = '';
   
   applyFilters();
@@ -706,7 +715,7 @@ function renderDonut() {
     const key = r.estado ? normEstado(r.estado) : 'Sin registrar';
     counts[key] = (counts[key] || 0) + 1;
   });
-  const colorMap = { 'Operativo': '#3B9144', 'En Bodega': '#F59120', 'De Baja': '#DC2626', 'Sin registrar': '#CBD5E1' };
+  const colorMap = { 'Operativo': '#3B9144', 'En Bodega': '#F59120', 'De Baja': '#DC2626', 'Asignado': '#6366F1', 'Sin registrar': '#CBD5E1' };
   const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   const total = workingData.length;
   const cx = 70, cy = 70, r = 58, rInner = 34;
@@ -791,6 +800,8 @@ function openFicha(id) {
     ['Ubicación', r.ubicacion || 'No registrado'],
     ['Estado', r.estado ? normEstado(r.estado) : 'Sin registrar'],
     ['Responsable de registro', r.responsable || '—'],
+    ['Responsable de asignación', r.responsableAsignacion || '—'],
+    ['Documento de respaldo', r.documentoAsignacion || '—'],
     ['Fecha de registro/modificación', fmtDate(r.fRegistro)],
   ]);
   if (r.obsInv) html += `<div class="ficha-note">${r.obsInv}</div>`;
@@ -803,12 +814,14 @@ function openFicha(id) {
       histHtml += `
       <div style="background:var(--slate-50); padding:12px; border-radius:6px; border:1px solid var(--slate-200); font-size:13px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <strong style="color:var(--slate-800)">${ds}</strong>
+          <strong style="color:var(--slate-800)">${ds} ${m.tipo ? `<span style="background:var(--teal); color:white; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:8px;">${m.tipo}</span>` : ''}</strong>
           <span style="color:var(--slate-500)">Por: ${m.usuario || 'Sistema'}</span>
         </div>
         <div style="color:var(--slate-600)">
           De: <strong>${m.deUbicacion}</strong><br>
           A: <strong>${m.aUbicacion}</strong>
+          ${m.documento ? `<br>Documento: <strong>${m.documento}</strong>` : ''}
+          ${m.obs ? `<br>Obs: <em>${m.obs}</em>` : ''}
         </div>
       </div>
       `;
@@ -2088,6 +2101,161 @@ document.getElementById('btn-save-modal')?.addEventListener('click', () => {
   closeCrudModal();
   if (!isNew) {
     openFicha(id);
+  }
+});
+
+/* ===== Asignar Equipo (Modal) ===== */
+const assignModalScrim = document.getElementById('assign-modal-scrim');
+const assignModal = document.getElementById('assign-modal');
+const assignForm = document.getElementById('assign-form');
+
+function openAssignModal(id) {
+  if (id === null) return;
+  assignForm.reset();
+  
+  const r = workingData.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('assign-responsable').value = r.responsable || '';
+  
+  const divSelect = document.getElementById('assign-ubi-division');
+  const uniSelect = document.getElementById('assign-ubi-unidad');
+  const depSelect = document.getElementById('assign-ubi-dependencia');
+
+  divSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+    adminData.divisiones.map(d => `<option value="${d.id}">${d.nombre}</option>`).join('');
+  uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+  uniSelect.disabled = true;
+  depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+  depSelect.disabled = true;
+  document.getElementById('assign-ubicacion').value = '';
+
+  const actualizarAssignUbicacionOculta = () => {
+    const divId = divSelect.value;
+    const uniId = uniSelect.value;
+    const depId = depSelect.value;
+    let ubiStr = '';
+    if (divId) {
+      const d = adminData.divisiones.find(x => x.id === divId);
+      if (d) {
+        ubiStr = d.nombre;
+        if (uniId) {
+          const u = d.unidades.find(x => x.id === uniId);
+          if (u) {
+            ubiStr += ' - ' + u.nombre;
+            if (depId) {
+              const dep = u.dependencias.find(x => x.id === depId);
+              if (dep) ubiStr += ' - ' + dep.nombre;
+            }
+          }
+        }
+      }
+    }
+    document.getElementById('assign-ubicacion').value = ubiStr;
+  };
+
+  divSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === this.value);
+    if (d) {
+      uniSelect.innerHTML = '<option value="">-- Seleccione Unidad --</option>' +
+        d.unidades.map(u => `<option value="${u.id}">${u.nombre}</option>`).join('');
+      uniSelect.disabled = false;
+    } else {
+      uniSelect.innerHTML = '<option value="">-- Seleccione División --</option>';
+      uniSelect.disabled = true;
+    }
+    depSelect.innerHTML = '<option value="">-- Seleccione --</option>';
+    depSelect.disabled = true;
+    actualizarAssignUbicacionOculta();
+  };
+
+  uniSelect.onchange = function () {
+    const d = adminData.divisiones.find(x => x.id === divSelect.value);
+    const u = d ? d.unidades.find(x => x.id === this.value) : null;
+    if (u && u.dependencias.length > 0) {
+      depSelect.innerHTML = '<option value="">-- Seleccione --</option>' +
+        u.dependencias.map(dep => `<option value="${dep.id}">${dep.nombre}</option>`).join('');
+      depSelect.disabled = false;
+    } else {
+      depSelect.innerHTML = '<option value="">-- Sin dependencias --</option>';
+      depSelect.disabled = true;
+    }
+    actualizarAssignUbicacionOculta();
+  };
+
+  depSelect.onchange = actualizarAssignUbicacionOculta;
+
+  assignModalScrim.classList.add('open');
+  assignModal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAssignModal() {
+  assignModalScrim.classList.remove('open');
+  assignModal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('btn-close-assign')?.addEventListener('click', closeAssignModal);
+document.getElementById('btn-cancel-assign')?.addEventListener('click', closeAssignModal);
+assignModalScrim?.addEventListener('click', closeAssignModal);
+
+document.getElementById('btn-assign-asset')?.addEventListener('click', () => {
+  if (currentFichaId !== null) openAssignModal(currentFichaId);
+});
+
+document.getElementById('btn-save-assign')?.addEventListener('click', () => {
+  if (!assignForm.checkValidity()) {
+    assignForm.reportValidity();
+    return;
+  }
+  const divSelect = document.getElementById('assign-ubi-division');
+  const uniSelect = document.getElementById('assign-ubi-unidad');
+  const depSelect = document.getElementById('assign-ubi-dependencia');
+  
+  if (!divSelect.value || !uniSelect.value) {
+    alert("Por favor seleccione al menos una División y un Departamento/Unidad destino.");
+    return;
+  }
+  if (!depSelect.disabled && !depSelect.value) {
+    alert("Por favor seleccione una Dependencia destino.");
+    return;
+  }
+
+  const newUbicacion = document.getElementById('assign-ubicacion').value;
+  
+  const responsable = document.getElementById('assign-responsable').value.trim();
+  const documento = document.getElementById('assign-documento').value.trim();
+  const obs = document.getElementById('assign-obs').value.trim();
+
+  const idx = workingData.findIndex(x => x.id === currentFichaId);
+  if (idx !== -1) {
+    const r = workingData[idx];
+    const oldUbicacion = r.ubicacion;
+
+    r.responsableAsignacion = responsable;
+    r.ubicacion = newUbicacion;
+    r.estado = 'Asignado';
+    r.documentoAsignacion = documento;
+
+    r.historialMovimientos = r.historialMovimientos || [];
+    const globalUsr = document.getElementById('global-usuario-activo');
+    const usuarioActivo = (globalUsr && globalUsr.value) ? globalUsr.value : 'Sistema';
+
+    r.historialMovimientos.push({
+      fecha: new Date().toISOString(),
+      usuario: usuarioActivo,
+      deUbicacion: oldUbicacion || 'Sin asignar',
+      aUbicacion: newUbicacion,
+      documento: documento,
+      obs: obs,
+      tipo: 'Asignación'
+    });
+
+    saveWorkingData();
+    refreshAll();
+    closeAssignModal();
+    openFicha(currentFichaId);
   }
 });
 
